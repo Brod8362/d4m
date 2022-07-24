@@ -1,0 +1,42 @@
+#!/usr/bin/env python3
+import vdf
+import os
+import toml
+import sqlite3
+from divamod import DivaMod
+
+MEGAMIX_APPID = 1761390
+LIBRARYFOLDERS_VDF_PATH = os.path.expanduser("~/.local/share/Steam/config/libraryfolders.vdf")
+
+if not os.path.isfile(LIBRARYFOLDERS_VDF_PATH):
+    print("cannot find libraryfolders.vdf")
+
+MEGAMIX_PATH = None
+
+with open(LIBRARYFOLDERS_VDF_PATH) as vdf_fd:
+    data = vdf.parse(vdf_fd)
+    for library_index in data["libraryfolders"]:
+        library_folder = data["libraryfolders"][library_index]
+        if str(MEGAMIX_APPID) in library_folder["apps"] and MEGAMIX_PATH == None:
+            MEGAMIX_PATH = os.path.join(library_folder['path'], "steamapps/common/Hatsune Miku Project DIVA Mega Mix Plus/")
+
+if MEGAMIX_PATH == None:
+    print("couldn't find megamix install directory, is it installed?")
+    quit()
+
+if not os.path.isfile(os.path.join(MEGAMIX_PATH, "config.toml")):
+    print("couldn't find config.toml in megamix root, is DivaModLoader installed?")
+    quit()
+
+with open(os.path.join(MEGAMIX_PATH, "config.toml")) as conf_fd:
+    config = toml.load(conf_fd)
+    ENABLED_MODS_PATH = MEGAMIX_PATH + config["mods"]
+    DISABLED_MODS_PATH = MEGAMIX_PATH + config.get("disabled_mods", "disabled_mods")
+
+for d in [ENABLED_MODS_PATH, DISABLED_MODS_PATH]:
+    if not os.path.exists(d):
+        os.mkdir(d)
+
+enabled_mods = list(map(lambda x: DivaMod(os.path.join(ENABLED_MODS_PATH, x)), os.listdir(ENABLED_MODS_PATH)))
+
+print(list(map(lambda x: str(x), enabled_mods)))
