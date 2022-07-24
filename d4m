@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from ast import Mod
+import time
 from click import option
 import vdf
 import os
@@ -145,7 +146,9 @@ mod_manager = ModManager(ENABLED_MODS_PATH, DISABLED_MODS_PATH)
 print(f"d4m v{VERSION}")
 print(f"{len(mod_manager.mods())} mods installed")
 print(f"{colorama.Fore.YELLOW}Checking for updates...{colorama.Fore.RESET}")
+begin = time.time()
 mod_manager.check_for_updates()
+print(f"Update check completed in {time.time()-begin:.1f}s")
 available_updates = sum(1 for x in filter(lambda x: not  x.is_simple() and x.is_out_of_date(), mod_manager.mods()))
 if available_updates == 0:
     print(f"{colorama.Fore.GREEN}All enabled mods up-to-date.{colorama.Fore.RESET}")

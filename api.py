@@ -15,11 +15,56 @@ SEARCH_ENDPOINT = "/apiv9/Util/Game/Submissions"
 
 DIVA_GAME_ID = 16522
 
-@functools.cache
-def fetch_mod_data(mod_id: int) -> datetime:
+mod_info_cache = {}
+
+def multi_fetch_mod_data(mod_ids: list[int]) -> list[dict]:
+    mod_data = []
+    need_fetch = []
+    for mod_id in mod_ids:
+        if mod_id in mod_info_cache:
+            mod_data.append(mod_info_cache[mod_id])
+        else:
+            need_fetch.append(mod_id)
+
+    if len(need_fetch) > 0:
+        params = {}
+        for (index, mod_id) in enumerate(need_fetch):
+            params.update({
+                f"itemid[{index}]": mod_id,
+                f"fields[{index}]": "Files().aFiles()",
+                f"itemtype[{index}]": "Mod"
+            })
+        resp = requests.get(BASE_DOMAIN+GET_DATA_ENDPOINT,
+            params = params
+        )
+
+        if resp.status_code != 200:
+            #TODO: deal with this error
+            pass
+
+        for (index, elem) in enumerate(resp.json()):
+            mod_id = need_fetch[index]
+            files = sorted(elem[0].values(), key = lambda x: x["_tsDateAdded"], reverse=True)
+            obj = {
+                "id": mod_id,
+                "hash": files[0]["_sMd5Checksum"],
+                "download": files[0]["_sDownloadUrl"]
+            }
+            mod_info_cache[mod_id] = obj
+            mod_data.append(obj)
+
+    return mod_data
+        
+
+def fetch_mod_data(mod_id: int) -> dict:
     """
     dict w/ keys id, hash, download
     """
+    if mod_id in mod_info_cache:
+        return mod_info_cache[mod_id]
+
+    return multi_fetch_mod_data([mod_id])[0]
+
     resp = requests.get(BASE_DOMAIN+GET_DATA_ENDPOINT,
         params = {
             "itemid": mod_id,
@@ -33,11 +78,13 @@ def fetch_mod_data(mod_id: int) -> datetime:
 
     j = resp.json()
     files = sorted(j[0].values(), key = lambda x : x["_tsDateAdded"], reverse=True)
-    return {
+    obj = {
         "id": mod_id,
         "hash": files[0]["_sMd5Checksum"],
         "download": files[0]["_sDownloadUrl"],
     }
+    mod_info_cache[obj] = obj
+    return obj
 
 def search_mods(query: str) -> "list[dict]":
     resp = requests.get(ALT_API_DOMAIN+SEARCH_ENDPOINT,

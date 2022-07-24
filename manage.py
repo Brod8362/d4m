@@ -64,9 +64,8 @@ class ModManager():
                 pass #TODO: idk lol
 
     def check_for_updates(self):
-        for x in self.enabled:
-            if not x.is_simple():
-                x.modinfo
+        ids = [x.id for x in self.enabled+self.disabled if not x.is_simple()]
+        api.multi_fetch_mod_data(ids)
 
 def load_mods(path: str) -> "list[DivaSimpleMod]":
     return [diva_mod_create(os.path.join(path, mod_path)) for mod_path in os.listdir(path)]
