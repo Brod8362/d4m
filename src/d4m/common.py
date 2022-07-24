@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import packaging.version
 import pkg_resources
 import vdf
