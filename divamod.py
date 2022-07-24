@@ -7,16 +7,31 @@ import functools
 class UnmanageableModError(ValueError):
     pass
 
-class DivaMod():
+def diva_mod_create(path: str):
+    try:
+        return DivaMod(path)
+    except:
+        return DivaSimpleMod(path)
+
+class DivaSimpleMod():
     def __init__(self, path: str):
-        try:
-            with open(os.path.join(path, "config.toml")) as mod_conf_fd:
+        self.path = path
+        with open(os.path.join(path, "config.toml")) as mod_conf_fd:
                 data = toml.load(mod_conf_fd)
                 self.version = None if "version" not in data else packaging.version.Version(data["version"])
-                self.name = data["name"]
-                self.author = data["author"]
-                self.path = path
+                self.name = data.get("name", path)
+                self.author = data.get("author", "unknown author")
 
+    def __str__(self):
+        return f'{self.name} ({self.version}) by {self.author}'
+
+    def is_simple(self):
+        return True
+
+class DivaMod(DivaSimpleMod):
+    def __init__(self, path: str):
+        super().__init__(path)
+        try:
             mod_id_path = os.path.join(path, "modinfo.toml")
             with open(mod_id_path) as moddata_fd:
                 mod_data = toml.load(moddata_fd)
@@ -27,12 +42,12 @@ class DivaMod():
 
     def is_out_of_date(self):
         return self.modinfo != None and self.hash != self.modinfo["hash"]
-        
-    def __str__(self):
-        return f'{self.name} ({self.version}) by {self.author}'
 
     def __eq__(self, other):
         return type(self) == type(other) and self.id == other.id
+
+    def is_simple(self):
+        return False
 
     @functools.cached_property
     def modinfo(self):
