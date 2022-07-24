@@ -170,11 +170,11 @@ def main():
             )
         if mod_manager.enabled:
             options.append(
-                (f"Disable DML", lambda x: x.disable_dml())
+                (f"Disable DivaModLoader", lambda x: x.disable_dml())
             )
         else:
             options.append(
-                (f"Enable DML", lambda x: x.enable_dml())
+                (f"Enable DivaModLoader", lambda x: x.enable_dml())
             )
         status_strings = [
             "q to quit",

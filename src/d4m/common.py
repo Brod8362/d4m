@@ -40,7 +40,7 @@ def get_modloader_info(megamix_path: str):
         config = toml.load(conf_fd)
         dml_version = packaging.version.Version(config.get("version", "v0.0.0"))
         enabled = config["enabled"]
-        mods_folder = os.path.join(megamix_path + config.get("mods", "mods"))
+        mods_folder = os.path.join(megamix_path, config.get("mods", "mods"))
         return dml_version, enabled, mods_folder
 
 def can_autoupdate_dml():
