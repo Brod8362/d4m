@@ -1,11 +1,15 @@
-from d4m.common import VERSION, get_megamix_path, modloader_is_installed, get_modloader_info, can_autoupdate_dml, get_vdf_path
-from d4m.manage import ModManager, check_modloader_version
+import os
 import time
+
 import colorama
 from simple_term_menu import TerminalMenu
+
 import d4m.api as api
-from d4m.manage import install_modloader
-import os
+from d4m.common import (VERSION, can_autoupdate_dml, get_megamix_path,
+                        get_modloader_info, get_vdf_path,
+                        modloader_is_installed)
+from d4m.manage import ModManager, check_modloader_version, install_modloader
+
 
 def generate_preview(mod_str: str, mod_manager: ModManager):
     content = []
@@ -97,8 +101,15 @@ def menu_manage(mod_manager: ModManager):
                     mod_manager.delete_mod(selected_mod)
                     print(f"{colorama.Fore.RED}{selected_mod} deleted.{colorama.Fore.RESET}")
 
-def menu_exit(mod_manager: ModManager):
-    quit()
+def do_update_all(mod_manager: ModManager):
+    for mod in mod_manager.mods:
+        if not mod.is_simple() and mod.is_out_of_date():
+            print(f"Updating {mod}...")
+            try:
+                mod_manager.update(mod)
+                print(f"{colorama.Fore.GREEN}Successfully updated {mod.name}{colorama.Fore.RESET}")
+            except Exception as e:
+                print(f"{colorama.Fore.RED}Failed to update {mod.name}: {e}{colorama.Fore.RESET}")
 
 def main():
     print(f"d4m v{VERSION}")
@@ -113,7 +124,7 @@ def main():
         else:
             quit()
 
-    dml_version, dml_enabled, MODS_PATH = get_modloader_info(megamix_path)
+    dml_version, _, mods_path = get_modloader_info(megamix_path)
 
     dml_latest, dml_url = check_modloader_version()
     if dml_latest > dml_version:
@@ -132,8 +143,8 @@ def main():
         else:
             print(f"DivaModLoader update available, but auto-updating is not supported on this platform. Download it here: {dml_url}")
 
-    os.makedirs(MODS_PATH, exist_ok=True)
-    mod_manager = ModManager(MODS_PATH)
+    os.makedirs(mods_path, exist_ok=True)
+    mod_manager = ModManager(megamix_path, mods_path)
 
     print(f"{len(mod_manager.mods)} mods installed")
     print(f"{colorama.Fore.YELLOW}Checking for mod updates...{colorama.Fore.RESET}")
@@ -146,14 +157,32 @@ def main():
     else:
         print(f"{colorama.Fore.YELLOW}{available_updates} mods have updates available.{colorama.Fore.RESET}")
 
-    options = [
+    base_options = [
         ("Install new mods", menu_install),
         ("Manage existing mods", menu_manage),
-        ("Exit", menu_exit)
     ]
 
     while True:
-        root_menu = TerminalMenu(x[0] for x in options)
+        options = base_options.copy()
+        if available_updates != 0:
+            options.append(
+                (f"Update all", do_update_all)
+            )
+        if mod_manager.enabled:
+            options.append(
+                (f"Disable DML", lambda x: x.disable_dml())
+            )
+        else:
+            options.append(
+                (f"Enable DML", lambda x: x.enable_dml())
+            )
+        status_strings = [
+            "q to quit",
+            f"d4m v{VERSION}",
+            f"{len(mod_manager.mods)} mods",
+            f"DivaModLoader {'ENABLED' if mod_manager.enabled else 'DISABLED'}"
+        ]
+        root_menu = TerminalMenu([x[0] for x in options], status_bar="; ".join(status_strings), status_bar_style=("fg_cyan", "bg_black"))
         sel = root_menu.show()
         if sel is None:
             break
