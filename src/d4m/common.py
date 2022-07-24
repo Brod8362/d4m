@@ -12,7 +12,7 @@ VERSION = pkg_resources.get_distribution("d4m").version
 def get_vdf_path():
     if platform == "linux":
         return os.path.expanduser("~/.local/share/Steam/config/libraryfolders.vdf")
-    elif platform == "windows":
+    elif platform == "win32":
         import winreg
         with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, "SOFTWARE\WOW6432Node\Valve\Steam") as steam_key:
             return os.path.join(winreg.QueryValueEx(steam_key, "InstallPath")[0], os.path.join("config", "libraryfolders.vdf"))
