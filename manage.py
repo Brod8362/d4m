@@ -39,9 +39,9 @@ class ModManager():
             api.download_and_extract_mod(data["download"], tempdir)
             extracted = os.listdir(tempdir)
             if "config.toml" in extracted:
-                shutil.move(tempdir, os.path.join(self.enabled_path, mod_id))
+                shutil.move(tempdir, os.path.join(self.mods_path, mod_id))
             elif len(extracted) == 1:
-                mod_folder_name = os.path.join(self.enabled_path, extracted[0])
+                mod_folder_name = os.path.join(self.mods_path, extracted[0])
                 shutil.move(os.path.join(tempdir, extracted[0]), mod_folder_name)
                 with open(os.path.join(mod_folder_name, "modinfo.toml"), "w") as modinfo_fd:
                     data = {

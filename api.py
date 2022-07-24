@@ -5,7 +5,7 @@ import magic
 from zipfile import ZipFile
 import py7zr
 from rarfile import RarFile
-import functools
+from util import jank_magic
 
 BASE_DOMAIN = "https://api.gamebanana.com"
 GET_DATA_ENDPOINT = "/Core/Item/Data"
@@ -109,7 +109,7 @@ def download_and_extract_mod(download_url: str, destination: str):
         pass
 
     file_content = BytesIO(resp.content)
-    mime_type = magic.from_buffer(file_content.read(1024), mime=True)
+    mime_type = jank_magic(file_content.read(64))
     file_content.seek(0)
     if mime_type == "application/x-7z-compressed":
         archive = py7zr.SevenZipFile(file_content)
@@ -127,4 +127,4 @@ def download_and_extract_mod(download_url: str, destination: str):
         archive.close()
         #TODO: catch exception for invalid 7z file
     else:
-        pass #TODO: exception? unsupported file type
+        raise RuntimeError("Unsupported mod archive format (must be 7z, zip, or rar)")

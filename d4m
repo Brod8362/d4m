@@ -61,7 +61,7 @@ def generate_preview(mod_str: str, mod_manager: ModManager):
 def menu_install(mod_manager: ModManager):
     search_str = input("Search for a mod...:")
     found_mods = api.search_mods(search_str)
-    installed_ids = [mod.id for mod in mod_manager.mods]
+    installed_ids = [mod.id for mod in mod_manager.mods if not mod.is_simple()]
     if not found_mods:
         print(f"No mods matching {colorama.Style.BRIGHT}{search_str}{colorama.Style.RESET_ALL} found.")
     else:
@@ -80,9 +80,12 @@ def menu_install(mod_manager: ModManager):
             if mod[0] in installed_ids:
                 print(f"{mod[1]} is already installed.")
             else:
-                print(f"Installing {mod[1]} ({mod[0]})")
-                mod_manager.install_mod(mod[0])
-                print(f"{colorama.Fore.GREEN}Installed {mod[1]}{colorama.Fore.RESET}")
+                try:
+                    print(f"Installing {mod[1]} ({mod[0]})")
+                    mod_manager.install_mod(mod[0])
+                    print(f"{colorama.Fore.GREEN}Installed {mod[1]}{colorama.Fore.RESET}")
+                except Exception as e:
+                    print(f"{colorama.Fore.RED}Failed to stalled {mod[1]} {colorama.Fore.RESET}({e})")
 
 def menu_manage(mod_manager: ModManager):
     options = ["Cancel"]
