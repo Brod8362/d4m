@@ -15,6 +15,7 @@ class DivaMod():
                 self.version = None if "version" not in data else packaging.version.Version(data["version"])
                 self.name = data["name"]
                 self.author = data["author"]
+                self.path = path
 
             mod_id_path = os.path.join(path, "modinfo.toml")
             with open(mod_id_path) as moddata_fd:
