@@ -13,6 +13,7 @@ import api
 
 MEGAMIX_APPID = 1761390
 LIBRARYFOLDERS_VDF_PATH = os.path.expanduser("~/.local/share/Steam/config/libraryfolders.vdf")
+VERSION = "0.1"
 
 if platform != "linux":
     print("this mod manager is only supported on linux")
@@ -141,7 +142,7 @@ def menu_exit(mod_manager: ModManager):
 
 mod_manager = ModManager(ENABLED_MODS_PATH, DISABLED_MODS_PATH)
 
-print("d4m v0.0")
+print(f"d4m v{VERSION}")
 print(f"{len(mod_manager.mods())} mods installed")
 print(f"{colorama.Fore.YELLOW}Checking for updates...{colorama.Fore.RESET}")
 mod_manager.check_for_updates()
