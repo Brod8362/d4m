@@ -96,7 +96,7 @@ def menu_install(mod_manager: ModManager):
 def menu_manage(mod_manager: ModManager):
     options = ["Cancel"]
     options.extend(str(mod) for mod in mod_manager.mods())
-    menu = TerminalMenu(options, preview_command=lambda x: generate_preview(x, mod_manager), preview_title="Mod Info", preview_size=0.4)
+    menu = TerminalMenu(options, preview_command=lambda x: generate_preview(x, mod_manager), preview_title="Mod Info", preview_size=0.4, status_bar="Press / to search")
     choice = menu.show()
     if not choice:
         return
@@ -146,7 +146,7 @@ print(f"d4m v{VERSION}")
 print(f"{len(mod_manager.mods())} mods installed")
 print(f"{colorama.Fore.YELLOW}Checking for updates...{colorama.Fore.RESET}")
 mod_manager.check_for_updates()
-available_updates = sum(1 for x in filter(lambda x: x.is_out_of_date(), mod_manager.mods()))
+available_updates = sum(1 for x in filter(lambda x: not  x.is_simple() and x.is_out_of_date(), mod_manager.mods()))
 if available_updates == 0:
     print(f"{colorama.Fore.GREEN}All enabled mods up-to-date.{colorama.Fore.RESET}")
 else:
@@ -161,7 +161,7 @@ options = [
 while True:
     root_menu = TerminalMenu(x[0] for x in options)
     sel = root_menu.show()
-    if not sel:
+    if sel is None:
         break
     if 0 <= sel < len(options):
         options[sel][1](mod_manager)
