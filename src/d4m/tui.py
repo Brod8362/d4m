@@ -87,9 +87,8 @@ def menu_manage(mod_manager: ModManager):
                     print("This mod has an unknown origin and thus cannot be auto-updated. Try deleting it and reinstalling it using d4m.")
                 else:
                     if selected_mod.is_out_of_date():
-                        #TODO: delete old mod
-                        #mod_manager.install_mod(selected_mod.id)
-                        print(f"funny update function goes here")
+                        mod_manager.delete_mod(selected_mod)
+                        mod_manager.install_mod(selected_mod.id)
                     else:
                         print(f"{selected_mod.name} is up-to-date.")
             case 3:

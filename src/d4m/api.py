@@ -38,8 +38,7 @@ def multi_fetch_mod_data(mod_ids: list[int]) -> list[dict]:
         )
 
         if resp.status_code != 200:
-            #TODO: deal with this error
-            pass
+            raise RuntimeError(f"Gamebanana API returned {resp.status_code}")
 
         for (index, elem) in enumerate(resp.json()):
             mod_id = need_fetch[index]
@@ -73,7 +72,8 @@ def search_mods(query: str) -> "list[dict]":
         }
     )
     if resp.status_code != 200:
-        return None #TODO: exception?
+        raise RuntimeError(f"Gamebanana search API returned {resp.status_code}")
+
     j = resp.json()
     def map_name(ers):
         mod_id = ers["_idRow"]
@@ -83,26 +83,30 @@ def search_mods(query: str) -> "list[dict]":
 def download_and_extract_mod(download_url: str, destination: str):
     resp = requests.get(download_url)
     if resp.status_code != 200:
-        #TODO: exception?
-        pass
+        raise RuntimeError(f"File download returned {resp.status_code}")
 
     file_content = BytesIO(resp.content)
     mime_type = jank_magic(file_content.read(64))
     file_content.seek(0)
-    if mime_type == "application/x-7z-compressed":
-        archive = py7zr.SevenZipFile(file_content)
-        archive.extractall(destination)
-        archive.close()
-        #TODO: catch exception for invalid 7z file
-    elif mime_type == "application/zip":
-        archive = ZipFile(file_content)
-        archive.extractall(destination)
-        archive.close()
-        #TODO: catch exception for invalid 7z file
-    elif mime_type == "application/x-rar":
-        archive = RarFile(file_content)
-        archive.extractall(destination)
-        archive.close()
-        #TODO: catch exception for invalid 7z file
-    else:
-        raise RuntimeError("Unsupported mod archive format (must be 7z, zip, or rar)")
+    try:
+        if mime_type == "application/x-7z-compressed":
+            archive = py7zr.SevenZipFile(file_content)
+            archive.extractall(destination)
+            archive.close()
+        elif mime_type == "application/zip":
+            archive = ZipFile(file_content)
+            archive.extractall(destination)
+            archive.close()
+        elif mime_type == "application/x-rar":
+            archive = RarFile(file_content)
+            archive.extractall(destination)
+            archive.close()
+        else:
+            raise RuntimeError("Unsupported mod archive format (must be 7z, zip, or rar)")
+    except Exception as e:
+        if isinstance(e, RuntimeError):
+            raise(e)
+        else:
+            raise RuntimeError("Archive corrupted or otherwise unreadable") #TODO: there's probably a better exception for this
+
+    

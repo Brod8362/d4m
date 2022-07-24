@@ -52,7 +52,7 @@ class ModManager():
                 new_mod = diva_mod_create(mod_folder_name)
                 self.mods.append(new_mod)
             else:
-                pass #TODO: idk lol
+                raise RuntimeError("Failed to install mod: archive directory unusable")
 
     def check_for_updates(self):
         ids = [x.id for x in self.mods if not x.is_simple()]
