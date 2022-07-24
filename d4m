@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
+from tkinter import DISABLED
 import vdf
 import os
 import toml
 from sys import platform
-from divamod import DivaMod
+from divamod import DivaMod, UnmanageableModError
 import colorama
+from manage import load_mods
 
 MEGAMIX_APPID = 1761390
 LIBRARYFOLDERS_VDF_PATH = os.path.expanduser("~/.local/share/Steam/config/libraryfolders.vdf")
@@ -39,11 +41,12 @@ with open(os.path.join(MEGAMIX_PATH, "config.toml")) as conf_fd:
     DISABLED_MODS_PATH = MEGAMIX_PATH + config.get("disabled_mods", "disabled_mods")
 
 for d in [ENABLED_MODS_PATH, DISABLED_MODS_PATH]:
-    if not os.path.exists(d):
-        os.mkdir(d)
+    os.makedirs(d, exist_ok=True)
 
-enabled_mods = list(map(lambda x: DivaMod(os.path.join(ENABLED_MODS_PATH, x)), os.listdir(ENABLED_MODS_PATH)))
-disabled_mods = list(map(lambda x: DivaMod(os.path.join(DISABLED_MODS_PATH, x)), os.listdir(DISABLED_MODS_PATH)))
+enabled_mods, unmanageable_mods = load_mods(ENABLED_MODS_PATH)
+disabled_mods, unmanageable_mods_2 = load_mods(DISABLED_MODS_PATH)
+unmanageable_mods.extend(unmanageable_mods_2)
+del unmanageable_mods_2
 
 print(f"{colorama.Fore.GREEN}== Enabled Mods =={colorama.Fore.RESET}")
 for mod in enabled_mods:
@@ -52,3 +55,7 @@ for mod in enabled_mods:
 print(f"{colorama.Fore.RED}== Disabled Mods =={colorama.Fore.RESET}")
 for mod in disabled_mods:
     print(str(mod))
+
+print(f"{colorama.Fore.CYAN}== Unmanageable Mods =={colorama.Fore.RESET}")
+for mod in unmanageable_mods:
+    print(mod)
