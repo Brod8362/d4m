@@ -2,11 +2,16 @@
 import vdf
 import os
 import toml
-import sqlite3
+from sys import platform
 from divamod import DivaMod
+import colorama
 
 MEGAMIX_APPID = 1761390
 LIBRARYFOLDERS_VDF_PATH = os.path.expanduser("~/.local/share/Steam/config/libraryfolders.vdf")
+
+if platform != "linux":
+    print("this mod manager is only supported on linux")
+    quit()
 
 if not os.path.isfile(LIBRARYFOLDERS_VDF_PATH):
     print("cannot find libraryfolders.vdf")
@@ -38,5 +43,12 @@ for d in [ENABLED_MODS_PATH, DISABLED_MODS_PATH]:
         os.mkdir(d)
 
 enabled_mods = list(map(lambda x: DivaMod(os.path.join(ENABLED_MODS_PATH, x)), os.listdir(ENABLED_MODS_PATH)))
+disabled_mods = list(map(lambda x: DivaMod(os.path.join(DISABLED_MODS_PATH, x)), os.listdir(DISABLED_MODS_PATH)))
 
-print(list(map(lambda x: str(x), enabled_mods)))
+print(f"{colorama.Fore.GREEN}== Enabled Mods =={colorama.Fore.RESET}")
+for mod in enabled_mods:
+    print(str(mod))
+
+print(f"{colorama.Fore.RED}== Disabled Mods =={colorama.Fore.RESET}")
+for mod in disabled_mods:
+    print(str(mod))
