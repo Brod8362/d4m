@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
-from dis import dis
-from tkinter import DISABLED
 import vdf
 import os
 import toml
 from sys import platform
 from divamod import DivaMod, UnmanageableModError
 import colorama
-from manage import load_mods
+from manage import ModManager, load_mods
 from simple_term_menu import TerminalMenu
+import api
 
 MEGAMIX_APPID = 1761390
 LIBRARYFOLDERS_VDF_PATH = os.path.expanduser("~/.local/share/Steam/config/libraryfolders.vdf")
@@ -48,17 +47,38 @@ for d in [ENABLED_MODS_PATH, DISABLED_MODS_PATH]:
 enabled_mods, unmanageable_mods = load_mods(ENABLED_MODS_PATH)
 disabled_mods, unmanageable_mods_2 = load_mods(DISABLED_MODS_PATH)
 
+def menu_install(mod_manager: ModManager):
+    search_str = input("Search for a mod...:")
+    found_mods = api.search_mods(search_str)
+    if len(found_mods) == 0:
+        print("No mods found.")
+    else:
+        options = [f"Cancel"]
+        options.extend(map(lambda x: x[1].strip().replace("\n", ""), found_mods))
+        mod_search_menu = TerminalMenu(options)
+        choice = mod_search_menu.show()
+        if 0 < choice < len(options):
+            mod = found_mods[choice-1]
+            print(f"Installing {mod[1]} ({mod[0]})")
+            mod_manager.install_mod(mod[0])
+            print(f"{colorama.Fore.GREEN}Installed {mod[1]}{colorama.Fore.RESET}")
+
+def menu_manage():
+    pass
+
 options = ["Install new mods", "Manage existing mods", "Exit"]
 print("d4m v0.0")
-manageable = len(enabled_mods) + len(disabled_mods)
-unmanageable = len(unmanageable_mods) + len(unmanageable_mods_2)
+manageable: "list[DivaMod]" = len(enabled_mods) + len(disabled_mods)
+unmanageable: "list[str]" = len(unmanageable_mods) + len(unmanageable_mods_2)
 print(f"{manageable+unmanageable} installed")
+
+mod_manager = ModManager(ENABLED_MODS_PATH, None, None, None, None)
 while True:
     root_menu = TerminalMenu(options)
     sel = root_menu.show()
-    if sel == 0: #isntall new
-        pass
-    elif sel ==1: #manage existing
+    if sel == 0: #install new
+        menu_install(mod_manager)
+    elif sel == 1: #manage existing
         pass
     else:
         break
