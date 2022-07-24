@@ -1,0 +1,33 @@
+[build-system]
+requires = [
+    "hatchling",
+    "vdf >= 3.4",
+    "toml >= 0.10.2",
+    "colorama >= 0.4.5",
+    "requests >= 2.27.1",
+    "simple-term-menu >= 1.5.0",
+    "rarfile >= 4.0",
+    "py7zr >= 0.19.0",
+    "packaging >= 21.3",
+]
+build-backend = "hatchling.build"
+
+[project]
+name = "d4m"
+version = "0.2.0"
+authors = [
+    { name = "Brod8362", email = "brod8362@gmail.com" },
+]
+description = "Project Diva MegaMix+ Mod Manager"
+readme = "README.md"
+license = {file = "LICENSE" }
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: Linux",
+]
+
+[project.urls]
+"Source Code" = "https://github.com/Brod8362/d4m"
+"Issues" = "https://github.com/Brod8362/d4m/issues"

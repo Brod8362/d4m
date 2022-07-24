@@ -1,7 +1,7 @@
 import os
 import toml
 import packaging.version
-import api
+import d4m.api as api
 import functools
 
 class UnmanageableModError(ValueError):

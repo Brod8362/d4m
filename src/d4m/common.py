@@ -2,18 +2,19 @@
 from ast import Mod
 import time
 import packaging.version
+import pkg_resources
 import vdf
 import os
 import toml
 from sys import platform
-from divamod import DivaMod, DivaSimpleMod
+from d4m.divamod import DivaMod, DivaSimpleMod
 import colorama
-from manage import ModManager, install_modloader, check_modloader_version
+from d4m.manage import ModManager, install_modloader, check_modloader_version
 from simple_term_menu import TerminalMenu
-import api
+import d4m.api as api
 
 try:
-    #DML archive use BCJ2. This is not supported by py7zr, so we need to rely on libarchive.
+    #DML archives use BCJ2. This is not supported by py7zr, so we need to rely on libarchive.
     #libarchive may not be installed on all systems.
     import libarchive.public 
     DML_UPDATE_SUPPORT = True 
@@ -37,7 +38,7 @@ else:
     print(f"unsupported platform {platform}")
     quit()
 
-VERSION = "0.2"
+VERSION = pkg_resources.get_distribution("d4m").version
 
 def generate_preview(mod_str: str, mod_manager: ModManager):
     content = []
@@ -89,7 +90,7 @@ def menu_install(mod_manager: ModManager):
 def menu_manage(mod_manager: ModManager):
     options = ["Cancel"]
     options.extend(str(mod) for mod in mod_manager.mods)
-    menu = TerminalMenu(options, preview_command=lambda x: generate_preview(x, mod_manager), preview_title="Mod Info", preview_size=0.4, status_bar="Press / to search")
+    menu = TerminalMenu(options, preview_command=lambda x: generate_preview(x, mod_manager), preview_title="Mod Info", preview_size=0.5, status_bar="Press / to search")
     choice = menu.show()
     if not choice:
         return

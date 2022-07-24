@@ -4,7 +4,7 @@ from datetime import datetime
 from zipfile import ZipFile
 import py7zr
 from rarfile import RarFile
-from util import jank_magic
+from d4m.util import jank_magic
 
 BASE_DOMAIN = "https://api.gamebanana.com"
 GET_DATA_ENDPOINT = "/Core/Item/Data"
