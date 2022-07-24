@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 from ast import Mod
 import time
-from click import option
 import packaging.version
 import vdf
 import os

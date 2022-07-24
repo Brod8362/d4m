@@ -1,8 +1,4 @@
 
-MAGIC_7Z = [0x37, 0x7A, 0xBC, 0xAF, 0x27, 0x1C]
-MAGIC_ZIP = []
-MAGIC_RAR = []
-
 MAGIC_PAIRS = [
     (b"\x37\x7A\xBC\xAF\x27\x1C", "application/x-7z-compressed"),
     (b"\x52\x61\x72\x21\x1A\x07\x01\x00", "application/x-rar"),

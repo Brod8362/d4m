@@ -1,7 +1,6 @@
 from io import BytesIO
 import requests
 from datetime import datetime
-import magic
 from zipfile import ZipFile
 import py7zr
 from rarfile import RarFile
