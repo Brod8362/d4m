@@ -2,19 +2,29 @@
 from ast import Mod
 import time
 from click import option
+import packaging.version
 import vdf
 import os
 import toml
 from sys import platform
 from divamod import DivaMod, DivaSimpleMod
 import colorama
-from manage import ModManager, load_mods
+from manage import ModManager, install_modloader, check_modloader_version
 from simple_term_menu import TerminalMenu
 import api
+
+try:
+    #DML archive use BCJ2. This is not supported by py7zr, so we need to rely on libarchive.
+    #libarchive may not be installed on all systems.
+    import libarchive.public 
+    DML_UPDATE_SUPPORT = True 
+except:
+    DML_UPDATE_SUPPORT = False
 
 MEGAMIX_APPID = 1761390
 LIBRARYFOLDERS_VDF_PATH = os.path.expanduser("~/.local/share/Steam/config/libraryfolders.vdf")
 VERSION = "0.1"
+print(f"d4m v{VERSION}")
 
 if platform != "linux":
     print("this mod manager is only supported on linux")
@@ -38,12 +48,35 @@ if MEGAMIX_PATH == None:
     quit()
 
 if not os.path.isfile(os.path.join(MEGAMIX_PATH, "config.toml")):
-    print("couldn't find config.toml in megamix root, is DivaModLoader installed?")
-    quit()
+    menu = TerminalMenu(["Yes", "No"], title="It doesn't seem like DivaModLoader is installed. Would you like to install the latest version?")
+    choice = menu.show()
+    if choice == 0:
+        install_modloader(MEGAMIX_PATH)
+    else:
+        quit()
 
 with open(os.path.join(MEGAMIX_PATH, "config.toml")) as conf_fd:
     config = toml.load(conf_fd)
-    MODS_PATH = os.path.join(MEGAMIX_PATH + config["mods"])
+    dml_version = packaging.version.Version(config.get("version", "v0.0.0"))
+    MODS_PATH = os.path.join(MEGAMIX_PATH + config.get("mods", "mods"))
+
+dml_latest, dml_url = check_modloader_version()
+if dml_latest > dml_version:
+    if DML_UPDATE_SUPPORT:
+        print(f"DivaModLoader update available. Latest version is {dml_latest}, you're running {dml_version}. Would you like to update?")
+        menu = TerminalMenu(["Yes", "No"])
+        choice = menu.show()
+        if choice == 0:
+            print("Updating DivaModLoader...")
+            try:
+                install_modloader(MEGAMIX_PATH)
+                print(f"Updated to DivaModLoader {dml_latest}")
+            except Exception as e:
+                print(f'Failed to update DivaModLoader. ({e})')
+                quit()
+    else:
+        print(f"DivaModLoader update available, but auto-updating is not supported on this platform. Download it here: {dml_url}")
+
 
 os.makedirs(MODS_PATH, exist_ok=True)
 
@@ -140,9 +173,8 @@ def menu_exit(mod_manager: ModManager):
 
 mod_manager = ModManager(MODS_PATH)
 
-print(f"d4m v{VERSION}")
 print(f"{len(mod_manager.mods)} mods installed")
-print(f"{colorama.Fore.YELLOW}Checking for updates...{colorama.Fore.RESET}")
+print(f"{colorama.Fore.YELLOW}Checking for mod updates...{colorama.Fore.RESET}")
 begin = time.time()
 mod_manager.check_for_updates()
 print(f"Update check completed in {time.time()-begin:.1f}s")

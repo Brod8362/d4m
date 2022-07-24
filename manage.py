@@ -1,4 +1,9 @@
+import functools
+from io import BytesIO
 import os
+
+import requests
+import packaging.version
 from divamod import DivaMod, DivaSimpleMod, UnmanageableModError, diva_mod_create
 import api
 import tempfile
@@ -55,3 +60,44 @@ class ModManager():
 
 def load_mods(path: str) -> "list[DivaSimpleMod]":
     return [diva_mod_create(os.path.join(path, mod_path)) for mod_path in os.listdir(path)]
+
+def install_modloader(diva_path: str):
+    try:
+        import libarchive.public
+    except:
+        raise RuntimeError("Modloader installation not supported on this platform")
+    #TODO: add check here to see if platform supports this
+    version, download_url = check_modloader_version()
+    resp = requests.get(download_url)
+    if resp.status_code != 200:
+        raise RuntimeError(f"Steam API returned {resp.status_code}")
+    with libarchive.public.memory_reader(resp.content) as la:
+        for entry in la:
+            if entry.filetype.IFDIR:
+                print(f"dir: {entry.pathname}")
+                os.makedirs(os.path.join(diva_path, entry.pathname), exist_ok=True)
+            else:
+                print(f"file: {entry.pathname}")
+                if entry.pathname == "config.toml":
+                    with open(os.path.join(diva_path, entry.pathname), "w") as fd:
+                        toml_buf = BytesIO()
+                        [toml_buf.write(block) for block in entry.get_blocks()]
+                        toml_buf.seek(0)
+                        data = toml.loads(toml_buf.read().decode("UTF-8"))
+                        data["version"] = str(version)
+                        toml.dump(data, fd)
+                else:
+                    with open(os.path.join(diva_path, entry.pathname), "wb") as fd:
+                        for block in entry.get_blocks():
+                            fd.write(block)
+    
+
+@functools.cache
+def check_modloader_version() -> tuple[packaging.version.Version,str]: 
+    resp = requests.get(
+        f"https://api.github.com/repos/blueskythlikesclouds/DivaModLoader/releases/latest"
+    )
+    if resp.status_code != 200:
+        raise RuntimeError(f"Steam API returned {resp.status_code}")
+    j = resp.json()
+    return (packaging.version.Version(j["name"]), j["assets"][0]["browser_download_url"]) #TODO: don't make assumption about assets?
