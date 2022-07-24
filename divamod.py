@@ -2,9 +2,6 @@ import os
 import toml
 import packaging.version #TODO: is this in pip?
 
-def get_or_else(indexable, index, default):
-    return indexable[index] if 0 <= index < len(indexable) else default
-
 class DivaMod():
     def __init__(self, path: str):
         with open(os.path.join(path, "config.toml")) as mod_conf_fd:
