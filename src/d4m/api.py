@@ -64,27 +64,6 @@ def fetch_mod_data(mod_id: int) -> dict:
 
     return multi_fetch_mod_data([mod_id])[0]
 
-    resp = requests.get(BASE_DOMAIN+GET_DATA_ENDPOINT,
-        params = {
-            "itemid": mod_id,
-            "fields": "Files().aFiles()",
-            "itemtype": "Mod"
-        }
-    )
-
-    if resp.status_code != 200:
-        return None #TODO: exception?
-
-    j = resp.json()
-    files = sorted(j[0].values(), key = lambda x : x["_tsDateAdded"], reverse=True)
-    obj = {
-        "id": mod_id,
-        "hash": files[0]["_sMd5Checksum"],
-        "download": files[0]["_sDownloadUrl"],
-    }
-    mod_info_cache[obj] = obj
-    return obj
-
 def search_mods(query: str) -> "list[dict]":
     resp = requests.get(ALT_API_DOMAIN+SEARCH_ENDPOINT,
         params = {

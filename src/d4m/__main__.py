@@ -1,2 +1,2 @@
-import d4m.common
-d4m.common.main()
+import d4m.tui
+d4m.tui.main()
