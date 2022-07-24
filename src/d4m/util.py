@@ -10,7 +10,6 @@ MAGIC_PAIRS = [
 
 def jank_magic(buf):
     for (data, mime) in MAGIC_PAIRS:
-        trunc = buf[:len(data)]
-        if trunc == data:
+        if buf.startswith(data):
             return mime
     return None
