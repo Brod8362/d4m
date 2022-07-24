@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from dis import dis
 from tkinter import DISABLED
 import vdf
 import os
@@ -7,6 +8,7 @@ from sys import platform
 from divamod import DivaMod, UnmanageableModError
 import colorama
 from manage import load_mods
+from simple_term_menu import TerminalMenu
 
 MEGAMIX_APPID = 1761390
 LIBRARYFOLDERS_VDF_PATH = os.path.expanduser("~/.local/share/Steam/config/libraryfolders.vdf")
@@ -45,17 +47,18 @@ for d in [ENABLED_MODS_PATH, DISABLED_MODS_PATH]:
 
 enabled_mods, unmanageable_mods = load_mods(ENABLED_MODS_PATH)
 disabled_mods, unmanageable_mods_2 = load_mods(DISABLED_MODS_PATH)
-unmanageable_mods.extend(unmanageable_mods_2)
-del unmanageable_mods_2
 
-print(f"{colorama.Fore.GREEN}== Enabled Mods =={colorama.Fore.RESET}")
-for mod in enabled_mods:
-    print(f"{mod} - {mod.is_out_of_date()}")
-
-print(f"{colorama.Fore.RED}== Disabled Mods =={colorama.Fore.RESET}")
-for mod in disabled_mods:
-    print(str(mod))
-
-print(f"{colorama.Fore.CYAN}== Unmanageable Mods =={colorama.Fore.RESET}")
-for mod in unmanageable_mods:
-    print(mod)
+options = ["Install new mods", "Manage existing mods", "Exit"]
+print("d4m v0.0")
+manageable = len(enabled_mods) + len(disabled_mods)
+unmanageable = len(unmanageable_mods) + len(unmanageable_mods_2)
+print(f"{manageable+unmanageable} installed")
+while True:
+    root_menu = TerminalMenu(options)
+    sel = root_menu.show()
+    if sel == 0: #isntall new
+        pass
+    elif sel ==1: #manage existing
+        pass
+    else:
+        break
