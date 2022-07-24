@@ -180,7 +180,7 @@ def main():
             "q to quit",
             f"d4m v{VERSION}",
             f"{len(mod_manager.mods)} mods",
-            f"DivaModLoader {'ENABLED' if mod_manager.enabled else 'DISABLED'}"
+            f"DivaModLoader {dml_version} {'ENABLED' if mod_manager.enabled else 'DISABLED'}"
         ]
         root_menu = TerminalMenu([x[0] for x in options], status_bar="; ".join(status_strings), status_bar_style=("fg_cyan", "bg_black"))
         sel = root_menu.show()
