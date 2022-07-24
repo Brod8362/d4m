@@ -104,8 +104,6 @@ def menu_exit(mod_manager: ModManager):
 def main():
     print(f"d4m v{VERSION}")
 
-    vdf_path = get_vdf_path()
-
     megamix_path = get_megamix_path()
 
     if not modloader_is_installed(megamix_path):

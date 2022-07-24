@@ -49,6 +49,6 @@ def can_autoupdate_dml():
         #DML archives use BCJ2. This is not supported by py7zr, so we need to rely on libarchive.
         #libarchive may not be installed on all systems.
         import libarchive.public 
-        DML_UPDATE_SUPPORT = True 
+        return True 
     except:
-        DML_UPDATE_SUPPORT = False
+        return False
