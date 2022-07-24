@@ -103,7 +103,7 @@ def menu_exit(mod_manager: ModManager):
 def main():
     print(f"d4m v{VERSION}")
 
-    megamix_path = get_megamix_path()
+    megamix_path = os.environ.get("D4M_INSTALL_DIR", get_megamix_path())
 
     if not modloader_is_installed(megamix_path):
         menu = TerminalMenu(["Yes", "No"], title="It doesn't seem like DivaModLoader is installed. Would you like to install the latest version?")
