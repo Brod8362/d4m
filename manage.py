@@ -14,16 +14,16 @@ class ModManager():
 
     def enable(self, mod: DivaMod):
         if mod in self.disabled:
+            shutil.move(mod.path, self.enabled_path)
             self.disabled.remove(mod)
             self.enabled.append(mod)
-            pass
 
     def disable(self, mod: DivaMod):
         if mod in self.enabled:
+            shutil.move(mod.path, self.disabled_path)
             self.enabled.remove(mod)
             self.disabled.append(mod)
-            pass
-
+            
     def update(self, mod: DivaMod):
         if not mod.is_simple():
             self.delete_mod(mod)
@@ -62,6 +62,11 @@ class ModManager():
                 self.enabled.append(new_mod)
             else:
                 pass #TODO: idk lol
+
+    def check_for_updates(self):
+        for x in self.enabled:
+            if not x.is_simple():
+                x.modinfo
 
 def load_mods(path: str) -> "list[DivaSimpleMod]":
     return [diva_mod_create(os.path.join(path, mod_path)) for mod_path in os.listdir(path)]
