@@ -6,23 +6,15 @@ import shutil
 import toml
 
 class ModManager():
-    def __init__(self, enabled_path, disabled_path):
-        self.enabled_path = enabled_path
-        self.disabled_path = disabled_path
-        self.enabled = load_mods(enabled_path)
-        self.disabled = load_mods(disabled_path)
+    def __init__(self, mods_path):
+        self.mods_path = mods_path
+        self.mods = load_mods(mods_path)
 
     def enable(self, mod: DivaMod):
-        if mod in self.disabled:
-            shutil.move(mod.path, self.enabled_path)
-            self.disabled.remove(mod)
-            self.enabled.append(mod)
+        mod.enable()
 
     def disable(self, mod: DivaMod):
-        if mod in self.enabled:
-            shutil.move(mod.path, self.disabled_path)
-            self.enabled.remove(mod)
-            self.disabled.append(mod)
+        mod.disable()
             
     def update(self, mod: DivaMod):
         if not mod.is_simple():
@@ -30,17 +22,11 @@ class ModManager():
             self.install_mod(mod.id)
 
     def is_enabled(self, mod: DivaMod):
-        return mod in self.enabled
+        return mod.enabled
 
     def delete_mod(self, mod: DivaMod):
-        cols = [self.enabled, self.disabled]
-        for c in cols:
-            if mod in c:
-                c.remove(mod)
         shutil.rmtree(mod.path)
-        
-    def mods(self):
-        return (self.enabled + self.disabled)
+        self.mods.remove(mod)
 
     def install_mod(self, mod_id: int): #mod_id and hash are used for modinfo.toml
         data = api.fetch_mod_data(mod_id)
@@ -59,12 +45,12 @@ class ModManager():
                     }
                     toml.dump(data, modinfo_fd)
                 new_mod = diva_mod_create(mod_folder_name)
-                self.enabled.append(new_mod)
+                self.mods.append(new_mod)
             else:
                 pass #TODO: idk lol
 
     def check_for_updates(self):
-        ids = [x.id for x in self.enabled+self.disabled if not x.is_simple()]
+        ids = [x.id for x in self.mods if not x.is_simple()]
         api.multi_fetch_mod_data(ids)
 
 def load_mods(path: str) -> "list[DivaSimpleMod]":

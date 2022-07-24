@@ -21,9 +21,26 @@ class DivaSimpleMod():
                 self.version = None if "version" not in data else packaging.version.Version(data["version"])
                 self.name = data.get("name", path)
                 self.author = data.get("author", "unknown author")
+                self.enabled = data["enabled"]
 
     def __str__(self):
         return f'{self.name} ({self.version}) by {self.author}'
+
+    def enable(self):
+        with open(os.path.join(self.path, "config.toml"), "r") as mod_conf_fd:
+            data = toml.load(mod_conf_fd)
+        data["enabled"] = True
+        with open(os.path.join(self.path, "config.toml"), "w") as mod_conf_fd:
+            toml.dump(data, mod_conf_fd)
+            self.enabled = True
+
+    def disable(self):
+        with open(os.path.join(self.path, "config.toml"), "r") as mod_conf_fd:
+            data = toml.load(mod_conf_fd)
+        data["enabled"] = False
+        with open(os.path.join(self.path, "config.toml"), "w") as mod_conf_fd:
+            toml.dump(data, mod_conf_fd)
+            self.enabled = False
 
     def is_simple(self):
         return True

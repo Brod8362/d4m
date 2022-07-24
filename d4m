@@ -43,15 +43,13 @@ if not os.path.isfile(os.path.join(MEGAMIX_PATH, "config.toml")):
 
 with open(os.path.join(MEGAMIX_PATH, "config.toml")) as conf_fd:
     config = toml.load(conf_fd)
-    ENABLED_MODS_PATH = MEGAMIX_PATH + config["mods"]
-    DISABLED_MODS_PATH = MEGAMIX_PATH + config.get("disabled_mods", "disabled_mods")
+    MODS_PATH = os.path.join(MEGAMIX_PATH + config["mods"])
 
-for d in [ENABLED_MODS_PATH, DISABLED_MODS_PATH]:
-    os.makedirs(d, exist_ok=True)
+os.makedirs(MODS_PATH, exist_ok=True)
 
 def generate_preview(mod_str: str, mod_manager: ModManager):
     content = []
-    found = list(filter(lambda x: str(x) == mod_str, mod_manager.mods()))
+    found = list(filter(lambda x: str(x) == mod_str, mod_manager.mods))
     if not found:
         return ""
     mod = found[0]
@@ -63,15 +61,14 @@ def generate_preview(mod_str: str, mod_manager: ModManager):
     content.append(f"Install Path: {mod.path}")
     if mod.is_simple() == False:
         content.append(f"Mod ID: {mod.id}")
-        if mod_manager.is_enabled(mod):
-            utd_str = f"{colorama.Fore.YELLOW}Out of date{colorama.Fore.RESET}" if mod.is_out_of_date() else f"{colorama.Fore.GREEN}Up to date{colorama.Fore.RESET}"
-            content.append(f"Update Status: {utd_str}")
+        utd_str = f"{colorama.Fore.YELLOW}Out of date{colorama.Fore.RESET}" if mod.is_out_of_date() else f"{colorama.Fore.GREEN}Up to date{colorama.Fore.RESET}"
+        content.append(f"Update Status: {utd_str}")
     return "\n".join(content)
 
 def menu_install(mod_manager: ModManager):
     search_str = input("Search for a mod...:")
     found_mods = api.search_mods(search_str)
-    installed_ids = [mod.id for mod in mod_manager.mods()]
+    installed_ids = [mod.id for mod in mod_manager.mods]
     if not found_mods:
         print(f"No mods matching {colorama.Style.BRIGHT}{search_str}{colorama.Style.RESET_ALL} found.")
     else:
@@ -96,13 +93,13 @@ def menu_install(mod_manager: ModManager):
 
 def menu_manage(mod_manager: ModManager):
     options = ["Cancel"]
-    options.extend(str(mod) for mod in mod_manager.mods())
+    options.extend(str(mod) for mod in mod_manager.mods)
     menu = TerminalMenu(options, preview_command=lambda x: generate_preview(x, mod_manager), preview_title="Mod Info", preview_size=0.4, status_bar="Press / to search")
     choice = menu.show()
     if not choice:
         return
     if 0 < choice < len(options):
-        selected_mod = mod_manager.mods()[choice-1]
+        selected_mod = mod_manager.mods[choice-1]
         mod_is_enabled = mod_manager.is_enabled(selected_mod)
         inner_options = [
             "Cancel",
@@ -141,17 +138,17 @@ def menu_manage(mod_manager: ModManager):
 def menu_exit(mod_manager: ModManager):
     quit()
 
-mod_manager = ModManager(ENABLED_MODS_PATH, DISABLED_MODS_PATH)
+mod_manager = ModManager(MODS_PATH)
 
 print(f"d4m v{VERSION}")
-print(f"{len(mod_manager.mods())} mods installed")
+print(f"{len(mod_manager.mods)} mods installed")
 print(f"{colorama.Fore.YELLOW}Checking for updates...{colorama.Fore.RESET}")
 begin = time.time()
 mod_manager.check_for_updates()
 print(f"Update check completed in {time.time()-begin:.1f}s")
-available_updates = sum(1 for x in filter(lambda x: not  x.is_simple() and x.is_out_of_date(), mod_manager.mods()))
+available_updates = sum(1 for x in filter(lambda x: not  x.is_simple() and x.is_out_of_date(), mod_manager.mods))
 if available_updates == 0:
-    print(f"{colorama.Fore.GREEN}All enabled mods up-to-date.{colorama.Fore.RESET}")
+    print(f"{colorama.Fore.GREEN}All mods up-to-date.{colorama.Fore.RESET}")
 else:
     print(f"{colorama.Fore.YELLOW}{available_updates} mods have updates available.{colorama.Fore.RESET}")
 
