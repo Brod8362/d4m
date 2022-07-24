@@ -97,8 +97,9 @@ def menu_manage(mod_manager: ModManager):
     options.extend(str(mod) for mod in mod_manager.mods())
     menu = TerminalMenu(options, preview_command=lambda x: generate_preview(x, mod_manager), preview_title="Mod Info", preview_size=0.4)
     choice = menu.show()
-    if 0 < choice < len(
-        options):
+    if not choice:
+        return
+    if 0 < choice < len(options):
         selected_mod = mod_manager.mods()[choice-1]
         mod_is_enabled = mod_manager.is_enabled(selected_mod)
         inner_options = [
@@ -159,5 +160,7 @@ options = [
 while True:
     root_menu = TerminalMenu(x[0] for x in options)
     sel = root_menu.show()
+    if not sel:
+        break
     if 0 <= sel < len(options):
         options[sel][1](mod_manager)
