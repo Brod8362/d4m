@@ -47,7 +47,7 @@ disabled_mods = list(map(lambda x: DivaMod(os.path.join(DISABLED_MODS_PATH, x)),
 
 print(f"{colorama.Fore.GREEN}== Enabled Mods =={colorama.Fore.RESET}")
 for mod in enabled_mods:
-    print(str(mod))
+    print(f"{mod} - {mod.is_out_of_date()}")
 
 print(f"{colorama.Fore.RED}== Disabled Mods =={colorama.Fore.RESET}")
 for mod in disabled_mods:

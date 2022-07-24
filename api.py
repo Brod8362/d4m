@@ -8,7 +8,7 @@ def fetch_mod_data(mod_id: int) -> datetime:
     resp = requests.get(BASE_DOMAIN+GET_DATA_ENDPOINT,
         params = {
             "itemid": mod_id,
-            "fields": "mdate,Files().aFiles()",
+            "fields": "Files().aFiles()",
             "itemtype": "Mod"
         }
     )
@@ -17,8 +17,9 @@ def fetch_mod_data(mod_id: int) -> datetime:
         return None #TODO: exception?
 
     j = resp.json()
-    files = sorted(j[1].values(), key = lambda x : x["_tsDateAdded"], reverse=True)
+    files = sorted(j[0].values(), key = lambda x : x["_tsDateAdded"], reverse=True)
     return {
-        "modified_date": j[0],
+        "id": mod_id,
+        "hash": files[0]["_sMd5Checksum"],
         "download": files[0]["_sDownloadUrl"]
     }
