@@ -322,6 +322,7 @@ class D4mGUI():
         sys.exit(qapp.exec())
 
 def main():
+    app = qwidgets.QApplication([])
     megamix_path = d4m.common.get_megamix_path()
     if not d4m.common.modloader_is_installed(megamix_path):
         #TODO: show annoying popup box :)
@@ -341,7 +342,7 @@ def main():
         show_exc_dialog("Fetching latest DML version", e, fatal=False)
 
     mod_manager = ModManager(megamix_path, mods_path=dml_mods_dir)
-    app = qwidgets.QApplication([])
+    
     D4mGUI(app, mod_manager, dml_version)
 
 if __name__ == "__main__":
