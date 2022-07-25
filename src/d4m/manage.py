@@ -11,13 +11,15 @@ import shutil
 import toml
 
 class ModManager():
-    def __init__(self, base_path, mods_path):
+    def __init__(self, base_path, mods_path = None):
         self.base_path = base_path
         self.mods_path = mods_path
-        self.mods = load_mods(mods_path)
         with open(os.path.join(self.base_path, "config.toml"), "r") as conf_fd:
             data = toml.load(conf_fd)
             self.enabled = data["enabled"]
+            if not mods_path:
+                mods_path = data.get("mods", "mods")
+        self.mods = load_mods(mods_path)
 
     def disable_dml(self):
         with open(os.path.join(self.base_path, "config.toml"), "r") as conf_fd:

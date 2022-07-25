@@ -29,7 +29,6 @@ def get_megamix_path(vdf_path = get_vdf_path()):
         for library_index in data["libraryfolders"]:
             library_folder = data["libraryfolders"][library_index]
             if str(MEGAMIX_APPID) in library_folder["apps"]:
-
                 return os.path.join(library_folder['path'], "steamapps", "common", "Hatsune Miku Project DIVA Mega Mix Plus")
 
 def modloader_is_installed(megamix_path: str):
