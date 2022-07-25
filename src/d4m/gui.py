@@ -2,6 +2,7 @@
 import enum
 from PySide6.QtGui import QColor
 import PySide6.QtWidgets as qwidgets
+import PySide6.QtConcurrent
 import traceback
 import PySide6.QtCore 
 import sys
@@ -45,7 +46,7 @@ def on_install_mod(mod_manager: ModManager, callback):
     dialog = ModInstallDialog(mod_manager=mod_manager, callback=callback)
     dialog.exec()
 
-def on_toggle_mod(selections, mod_manager: ModManager, tree):
+def on_toggle_mod(selections, mod_manager: ModManager):
     return
     for selection in selections:
         mod = next(filter(lambda mod: mod.name == selection, mod_manager.mods))
@@ -56,7 +57,7 @@ def on_toggle_mod(selections, mod_manager: ModManager, tree):
             mod_manager.enable(mod)
             log_msg(f"Enabled {mod}")
 
-def on_update_mod(selections, mod_manager: ModManager, tree):
+def on_update_mod(selections, mod_manager: ModManager):
     return
     log_msg(f"Attempting to update {len(selections)} mods")
     for selection in selections:
@@ -71,7 +72,7 @@ def on_update_mod(selections, mod_manager: ModManager, tree):
             else:
                 log_msg(f"{mod} is already up to date.")
 
-def on_delete_mod(selections, mod_manager: ModManager, tree):
+def on_delete_mod(selections, mod_manager: ModManager):
     return
     content = f"Are you sure you want to delete {len(selections)} mods?\n"+", ".join(selections)
     if tkinter.messagebox.askyesno(title = f"Delete {len(selections)} mods?", message=content):
@@ -98,7 +99,7 @@ class ModInstallDialog(qwidgets.QDialog):
             try:
                 results = d4m.api.search_mods(self.mod_name_input.text())
             except RuntimeError as e:
-                self.status_label.setText(f"<strong color=red>{e}</strong>")
+                self.status_label.setText(f"Err: <strong color=red>{e}</strong>")
                 return
             self.status_label.setText(f"Found <strong>{len(results)}</strong> mods matching <em>{self.mod_name_input.text()}</em>")
             self.found_mod_list.clear()
@@ -125,9 +126,17 @@ class ModInstallDialog(qwidgets.QDialog):
         self.setWindowTitle("d4m - Install new mods")
         
 
+class VoidFuncWorker(PySide6.QtCore.QRunnable):
+    def __init__(self, void_func, parent=None):
+        super(VoidFuncWorker, self).__init__(parent)
+        self.f = void_func
+
+    def run(self):
+        self.f()
+
 class D4mGUI():
     def __init__(self, qapp: qwidgets.QApplication, mod_manager: ModManager, dml_version):
-        mod_manager.check_for_updates()
+        threadpool = PySide6.QtCore.QThreadPool()
         window = qwidgets.QWidget()
         main_widget = qwidgets.QVBoxLayout(window)
         top_row = qwidgets.QHBoxLayout()
@@ -152,40 +161,55 @@ class D4mGUI():
         top_row.addWidget(mod_count_label)
 
         # Propogate mod list
-        mod_table.setColumnCount(5) #image, name, creator, version
-        def populate_modlist():
+        mod_table.setColumnCount(6) #image, name, creator, version
+        def populate_modlist(update_check=True):
             mod_table.clear()
-            mod_table.setHorizontalHeaderLabels(["Thumbnail", "Mod Name", "Mod Author(s)", "Mod Version", "Gamebanana ID"])
+            mod_table.setHorizontalHeaderLabels(["Thumbnail", "Mod Name", "Enabled", "Mod Author(s)", "Mod Version", "Gamebanana ID"])
             mod_table.setRowCount(len(mod_manager.mods))
             for (index, mod) in enumerate(mod_manager.mods):
                 mod_image = qwidgets.QTableWidgetItem("image here")
                 mod_name = qwidgets.QTableWidgetItem(mod.name)
+                mod_name.setToolTip(mod.name)
+                mod_enabled = qwidgets.QTableWidgetItem("Enabled" if mod.enabled else "Disabled")
                 mod_author = qwidgets.QTableWidgetItem(mod.author)
+                mod_author.setToolTip(mod.author)
                 mod_version = qwidgets.QTableWidgetItem(str(mod.version))
                 if mod.is_simple():
                     mod_version = qwidgets.QTableWidgetItem(str(mod.version)+"*")
                     mod_version.setToolTip("This mod is missing metadata information and the latest version cannot be determined.")
                 else:
-                    if mod.is_out_of_date():
+                    mod_version = qwidgets.QTableWidgetItem(str(mod.version))
+                    if update_check and mod.is_out_of_date():
                         mod_version.setBackground(QColor.fromRgb(255, 255, 0))
                         mod_version.setToolTip("A new version is available.")
                     url = f"https://gamebanana.com/mods/{mod.id}"
                     mod_id = qwidgets.QTableWidgetItem(f"<a href=\"{url}\">{mod.id}</a>")
-                    mod_version = qwidgets.QTableWidgetItem(str(mod.version))
-                    mod_table.setItem(index, 4, mod_id)
+                    mod_table.setItem(index, 5, mod_id)
                 mod_table.setItem(index, 0, mod_image)
                 mod_table.setItem(index, 1, mod_name)
-                mod_table.setItem(index, 2, mod_author)
-                mod_table.setItem(index, 3, mod_version)
+                mod_table.setItem(index, 2, mod_enabled)
+                mod_table.setItem(index, 3, mod_author)
+                mod_table.setItem(index, 4, mod_version)
                 enabled_mod_count = sum(1 for m in mod_manager.mods if m.enabled)
                 mod_count_label.setText(f"{len(mod_manager.mods)} mods / {enabled_mod_count} enabled")
 
-        populate_modlist()
+        def background_update_check(*args):
+            log_msg("Checking for updates...")
+            try:
+                mod_manager.check_for_updates()
+                populate_modlist(update_check=True)
+                log_msg("Update check complete.")
+            except Exception as e:
+                log_msg(f"Update check failed: {e}")
+
+        populate_modlist(update_check=False)
 
         def autoupdate(func, *args):
             func(*args)
             populate_modlist()
-            mod_count_label.text
+
+        fw = VoidFuncWorker(background_update_check)
+        threadpool.start(fw)
 
         # Propogate action buttons
         install_mod_button = qwidgets.QPushButton("Install Mods...")
