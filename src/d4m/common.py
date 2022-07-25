@@ -24,6 +24,8 @@ def get_vdf_path():
         quit()
 
 def get_megamix_path(vdf_path = get_vdf_path()):
+    if "D4M_INSTALL_DIR" in os.environ:
+        return os.environ["D4M_INSTALL_DIR"]
     with open(vdf_path) as vdf_fd:
         data = vdf.parse(vdf_fd)
         for library_index in data["libraryfolders"]:

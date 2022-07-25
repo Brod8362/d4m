@@ -30,7 +30,7 @@ def multi_fetch_mod_data(mod_ids: list[int]) -> list[dict]:
         for (index, mod_id) in enumerate(need_fetch):
             params.update({
                 f"itemid[{index}]": mod_id,
-                f"fields[{index}]": "Files().aFiles()",
+                f"fields[{index}]": "Files().aFiles(),Preview().sStructuredDataFullsizeUrl()",
                 f"itemtype[{index}]": "Mod"
             })
         resp = requests.get(BASE_DOMAIN+GET_DATA_ENDPOINT,
@@ -46,6 +46,7 @@ def multi_fetch_mod_data(mod_ids: list[int]) -> list[dict]:
             obj = {
                 "id": mod_id,
                 "hash": files[0]["_sMd5Checksum"],
+                "image": elem[1],
                 "download": files[0]["_sDownloadUrl"]
             }
             mod_info_cache[mod_id] = obj

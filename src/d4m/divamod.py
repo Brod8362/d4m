@@ -42,6 +42,21 @@ class DivaSimpleMod():
             toml.dump(data, mod_conf_fd)
             self.enabled = False
 
+    def has_thumbnail(self):
+        return os.path.exists(os.path.join(self.path, "preview.png"))
+
+    def get_thumbnail_bytes(self):
+        if self.has_thumbnail():
+            with open(os.path.join(self.path, "preview.png"), "rb") as fd:
+                return fd.read()
+        return None
+
+    def get_thumbnail_path(self):
+        if self.has_thumbnail():
+            return os.path.join(self.path, "preview.png")
+        else:
+            None
+
     def is_simple(self):
         return True
 
