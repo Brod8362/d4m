@@ -3,7 +3,7 @@ import pkg_resources
 import vdf
 import os
 import toml
-from sys import platform
+from sys import exit, platform
 
 MEGAMIX_APPID = 1761390
 
@@ -18,10 +18,10 @@ def get_vdf_path():
             return os.path.join(winreg.QueryValueEx(steam_key, "InstallPath")[0], os.path.join("config", "libraryfolders.vdf"))
     elif platform == "darwin": #TODO: macOS, where is the steam install directory?
         print("macOS is currently unsupported")
-        quit()
+        exit(1)
     else:
         print(f"unsupported platform {platform}")
-        quit()
+        exit(1)
 
 def get_megamix_path(vdf_path = get_vdf_path()):
     if "D4M_INSTALL_DIR" in os.environ:

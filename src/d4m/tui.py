@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import sys
 
 import colorama
 from simple_term_menu import TerminalMenu
@@ -132,7 +133,7 @@ def main():
         if choice == 0:
             install_modloader(megamix_path)
         else:
-            quit()
+            sys.exit()
 
     dml_version, _, mods_path = get_modloader_info(megamix_path)
 
@@ -149,7 +150,7 @@ def main():
                     print(f"Updated to DivaModLoader {dml_latest}")
                 except Exception as e:
                     print(f'Failed to update DivaModLoader. ({e})')
-                    quit()
+                    sys.exit(2)
         else:
             print(f"DivaModLoader update available, but auto-updating is not supported on this platform. Download it here: {dml_url}")
 
