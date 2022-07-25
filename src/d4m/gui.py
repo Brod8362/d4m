@@ -192,6 +192,10 @@ class D4mGUI():
             mod_table.clear()
             mod_table.setSelectionBehavior(qwidgets.QAbstractItemView.SelectionBehavior.SelectRows)
             mod_table.setHorizontalHeaderLabels(["Thumbnail", "Mod Name", "Enabled", "Mod Author(s)", "Mod Version", "Gamebanana ID"])
+            mod_table.horizontalHeader().setSectionResizeMode(0, qwidgets.QHeaderView.ResizeMode.ResizeToContents)
+            mod_table.horizontalHeader().setSectionResizeMode(1, qwidgets.QHeaderView.ResizeMode.ResizeToContents)
+            mod_table.horizontalHeader().setStretchLastSection(True)
+            mod_table.verticalHeader().setSectionResizeMode(qwidgets.QHeaderView.ResizeMode.Fixed)
             mod_table.setRowCount(len(mod_manager.mods))
             for (index, mod) in enumerate(mod_manager.mods):
                 mod_image = qwidgets.QTableWidgetItem("No Preview")
