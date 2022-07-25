@@ -1,49 +1,49 @@
 #!/usr/bin/env python
-import tkinter
-from tkinter import ttk
-import tkinter.messagebox
-import tkinter.scrolledtext
+import enum
+from PySide6.QtGui import QColor
+import PySide6.QtWidgets as qwidgets
 import traceback
+import PySide6.QtCore 
+import sys
+
+from django.forms import modelform_factory
 
 import d4m.common
 import d4m.manage
 from d4m.manage import ModManager
 import d4m.api
 from d4m.divamod import DivaSimpleMod
-import sys
+
 
 def log_msg(content: str):
-    statusbar.insert(tkinter.END, content+"\n")
-    statusbar.update_idletasks()
+    pass
 
 def show_exc_dialog(what_failed: str, exception: Exception, fatal = True):
-    f = tkinter.messagebox.showerror if fatal else tkinter.messagebox.showwarning
-    f(what_failed, traceback.format_exc())
-    if fatal:
-        quit()
+    pass
 
 def on_unhandled_exception(*args):
-    tkinter.messagebox.showerror(title="Uncaught Exception", message=traceback.format_exc())
-    quit()
+    pass
 
-def create_mod_elem(mod: DivaSimpleMod, root: ttk.Treeview):
+def create_mod_elem(mod: DivaSimpleMod, root):
+    return
     root.insert('', 'end', iid=mod.name, text=str(mod))
 
-def on_dml_toggle_click(root, status_label, mod_manager: ModManager):
+def on_dml_toggle_click(status_label, mod_manager: ModManager):
     try:
         if mod_manager.enabled:
             mod_manager.disable_dml()
-            status_label.set("DISABLED")
+            status_label.setText("DISABLED")
         else:
             mod_manager.enable_dml()
-            status_label.set("ENABLED")
+            status_label.setText("ENABLED")
     except Exception as e:
         show_exc_dialog("Toggling DML", e, fatal = False)
 
 def on_install_mod():
     pass #TODO: score lol
 
-def on_toggle_mod(selections, mod_manager: ModManager, tree: ttk.Treeview):
+def on_toggle_mod(selections, mod_manager: ModManager, tree):
+    return
     for selection in selections:
         mod = next(filter(lambda mod: mod.name == selection, mod_manager.mods))
         if mod_manager.is_enabled(mod):
@@ -53,7 +53,8 @@ def on_toggle_mod(selections, mod_manager: ModManager, tree: ttk.Treeview):
             mod_manager.enable(mod)
             log_msg(f"Enabled {mod}")
 
-def on_update_mod(selections, mod_manager: ModManager, tree: ttk.Treeview):
+def on_update_mod(selections, mod_manager: ModManager, tree):
+    return
     log_msg(f"Attempting to update {len(selections)} mods")
     for selection in selections:
         mod = next(filter(lambda mod: mod.name == selection, mod_manager.mods))
@@ -67,7 +68,8 @@ def on_update_mod(selections, mod_manager: ModManager, tree: ttk.Treeview):
             else:
                 log_msg(f"{mod} is already up to date.")
 
-def on_delete_mod(selections, mod_manager: ModManager, tree: ttk.Treeview):
+def on_delete_mod(selections, mod_manager: ModManager, tree):
+    return
     content = f"Are you sure you want to delete {len(selections)} mods?\n"+", ".join(selections)
     if tkinter.messagebox.askyesno(title = f"Delete {len(selections)} mods?", message=content):
         for selection in selections:
@@ -75,75 +77,94 @@ def on_delete_mod(selections, mod_manager: ModManager, tree: ttk.Treeview):
             mod_manager.delete_mod(mod)
             log_msg(f"Deleted {mod}")
 
-class D4mGUI(tkinter.Frame):
-    def __init__(self, master, mod_manager: ModManager):
-        super().__init__(master)
 
-        top_row_frame = tkinter.Frame(self)
-        mod_list_tree = ttk.Treeview(self)
-        mod_actions_frame = tkinter.Frame(self)
-        global statusbar
-        statusbar = tkinter.scrolledtext.ScrolledText(self, relief=tkinter.SUNKEN, height=5)
-        log_msg(f"d4m v{d4m.common.VERSION}")
+class D4mGUI():
+    def __init__(self, qapp: qwidgets.QApplication, mod_manager: ModManager):
+        # mod_manager.check_for_updates()
+        #TODO: re-enable update checking
+        window = qwidgets.QWidget()
+        main_widget = qwidgets.QVBoxLayout(window)
+        top_row = qwidgets.QHBoxLayout()
+        mod_table = qwidgets.QTableWidget()
+        mod_buttons = qwidgets.QHBoxLayout()
+        statusbar = qwidgets.QStatusBar()
+        statusbar.showMessage(f"d4m v{d4m.common.VERSION}")
 
         # Propogate top row
-        tkinter.Label(top_row_frame, text=f"DivaModLoader").pack(side=tkinter.LEFT)
-        dml_toggle_text = tkinter.StringVar(self, "ENABLED" if mod_manager.enabled else "DISABLED")
-        tkinter.Label(top_row_frame, textvariable=dml_toggle_text).pack(side=tkinter.LEFT)
-        tkinter.Button(top_row_frame, text="Toggle DML", command=lambda *args: on_dml_toggle_click(self, dml_toggle_text, mod_manager)).pack(side=tkinter.LEFT)
-        mod_count_value = tkinter.StringVar(self, f"-- mods")
-        tkinter.Label(top_row_frame, textvariable=mod_count_value).pack(side=tkinter.RIGHT)
+        dml_status_label = qwidgets.QLabel("DivaModLoader (version here)")
+        dml_enable_label = qwidgets.QLabel("ENABLED" if mod_manager.enabled else "DISABLED")
+        dml_toggle_button = qwidgets.QPushButton("Toggle DivaModLoader")
+        dml_toggle_button.clicked.connect(lambda *_: on_dml_toggle_click(dml_enable_label, mod_manager))
+        mod_count_label = qwidgets.QLabel("-- mods / -- enabled")
+        
+        top_row.addWidget(dml_status_label)
+        top_row.addWidget(dml_enable_label)
+        top_row.addWidget(dml_toggle_button)
+        top_row.addWidget(mod_count_label)
 
+        # Propogate mod list
+        mod_table.setColumnCount(5) #image, name, creator, version
+        mod_table.setHorizontalHeaderLabels(["Thumbnail", "Mod Name", "Mod Author(s)", "Mod Version", "Gamebanana ID"])
         def populate_modlist():
-            for a in mod_list_tree.get_children():
-                mod_list_tree.delete(a)
-            mod_list_tree.delete()
+            mod_table.clear()
+            mod_table.setRowCount(len(mod_manager.mods))
             for (index, mod) in enumerate(mod_manager.mods):
-                create_mod_elem(mod, mod_list_tree)
-            mod_count_value.set(f"{len(mod_manager.mods)} mods")
+                mod_image = qwidgets.QTableWidgetItem("image here")
+                mod_name = qwidgets.QTableWidgetItem(mod.name)
+                mod_author = qwidgets.QTableWidgetItem(mod.author)
+                mod_version = qwidgets.QTableWidgetItem(str(mod.version))
+                if not mod.is_simple():
+                    #TODO: re-enable this
+                    # if mod.is_out_of_date():
+                    #     mod_version.setBackground(QColor.fromRgb(255, 255, 0))
+                    url = f"https://gamebanana.com/mods/{mod.id}"
+                    mod_id = qwidgets.QTableWidgetItem(f"<a href=\"{url}\">{mod.id}</a>")
+                    mod_table.setItem(index, 4, mod_id)
+                mod_table.setItem(index, 0, mod_image)
+                mod_table.setItem(index, 1, mod_name)
+                mod_table.setItem(index, 2, mod_author)
+                mod_table.setItem(index, 3, mod_version)
+                enabled_mod_count = sum(1 for m in mod_manager.mods if m.enabled)
+                mod_count_label.setText(f"{len(mod_manager.mods)} mods / {enabled_mod_count} enabled")
 
-        # Propogate modlist
         populate_modlist()
 
-        def autoupdate_button(func, *args):
+        def autoupdate(func, *args):
             func(*args)
             populate_modlist()
+            mod_count_label.text
 
         # Propogate action buttons
-        tkinter.Button(mod_actions_frame,
-            text="Install Mods...",
-            command = lambda *_: autoupdate_button(on_install_mod)
-        )
+        install_mod_button = qwidgets.QPushButton("Install Mods...")
+        install_mod_button.clicked.connect(lambda *_: autoupdate(on_install_mod))
 
-        tkinter.Button(mod_actions_frame, 
-            text="Toggle Mod", 
-            command = lambda *_: autoupdate_button(on_toggle_mod, mod_list_tree.selection(), mod_manager, mod_list_tree)
-        ).pack(side=tkinter.LEFT)
+        toggle_mod_button = qwidgets.QPushButton("Toggle Selected")
+        toggle_mod_button.clicked.connect(lambda *_: autoupdate(on_toggle_mod, None, mod_manager, None))
 
-        tkinter.Button(mod_actions_frame, 
-            text="Update Mod", 
-            command = lambda *_: autoupdate_button(on_update_mod, mod_list_tree.selection(), mod_manager, mod_list_tree)
-        ).pack(side=tkinter.LEFT)
+        update_mod_button = qwidgets.QPushButton("Update Selected")
+        update_mod_button.clicked.connect(lambda *_: autoupdate(on_update_mod, None, mod_manager, None))
 
-        tkinter.Button(mod_actions_frame, 
-            text="Delete Mod", 
-            command = lambda *_: autoupdate_button(on_delete_mod, mod_list_tree.selection(), mod_manager, mod_list_tree)
-        ).pack(side=tkinter.LEFT)
+        delete_mod_button = qwidgets.QPushButton("Delete Selected")
+        delete_mod_button.clicked.connect(lambda *_: autoupdate(on_delete_mod, None, mod_manager, None))
 
-        tkinter.Button(mod_actions_frame,
-            text="Refresh",
-            command = lambda *_: autoupdate_button(mod_manager.reload)
-        ).pack(side=tkinter.RIGHT)
+        refresh_mod_button = qwidgets.QPushButton("Refresh")
+        refresh_mod_button.clicked.connect(lambda *_: autoupdate(mod_manager.reload))
 
-        # Populate main GUI
-        top_row_frame.pack(side=tkinter.TOP, fill=tkinter.X)
-        mod_list_tree.pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=True)
-        mod_actions_frame.pack(side=tkinter.TOP, fill=tkinter.BOTH)
-        statusbar.pack(fill=tkinter.X)
-        self.pack(fill=tkinter.BOTH, expand=True, padx=10)
+        mod_buttons.addWidget(install_mod_button)
+        mod_buttons.addWidget(toggle_mod_button)
+        mod_buttons.addWidget(update_mod_button)
+        mod_buttons.addWidget(delete_mod_button) 
+        mod_buttons.addWidget(refresh_mod_button)
+
+        # # Populate main GUI
+        main_widget.addLayout(top_row)
+        main_widget.addWidget(mod_table)
+        main_widget.addLayout(mod_buttons)
+        main_widget.addWidget(statusbar)
+        window.show()
+        sys.exit(qapp.exec())
 
 def main():
-    root = tkinter.Tk()
     megamix_path = d4m.common.get_megamix_path()
     if not d4m.common.modloader_is_installed(megamix_path):
         #TODO: show annoying popup box :)
@@ -155,18 +176,16 @@ def main():
         if dml_version < dml_latest:
             if d4m.common.can_autoupdate_dml():
                 content = f"A new version of DivaModLoader is available.\nCurrent: {dml_version}\nLatest:{dml_latest}\nDo you want to update?"
-                tkinter.messagebox.askyesno(title="DivaModLoader Update Available", message=content)
+                #TODO: yes/no message box here
             else:
                 pass
-                #dml autoupdate not supported
+                #TODO: dml autoupdate not supported
     except Exception as e:
         show_exc_dialog("Fetching latest DML version", e, fatal=False)
 
     mod_manager = ModManager(megamix_path, mods_path=dml_mods_dir)
-    app = D4mGUI(root, mod_manager)
-    app.master.title(f"d4m v{d4m.common.VERSION}")
-    tkinter.Tk.report_callback_exception = on_unhandled_exception
-    app.mainloop()
+    app = qwidgets.QApplication([])
+    D4mGUI(app, mod_manager)
 
 if __name__ == "__main__":
     main()
