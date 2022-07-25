@@ -92,7 +92,7 @@ def install_modloader(diva_path: str):
     version, download_url = check_modloader_version()
     resp = requests.get(download_url)
     if resp.status_code != 200:
-        raise RuntimeError(f"Steam API returned {resp.status_code}")
+        raise RuntimeError(f"Github API returned {resp.status_code}")
     with libarchive.public.memory_reader(resp.content) as la:
         for entry in la:
             if entry.filetype.IFDIR:
@@ -120,6 +120,6 @@ def check_modloader_version() -> tuple[packaging.version.Version,str]:
         f"https://api.github.com/repos/blueskythlikesclouds/DivaModLoader/releases/latest"
     )
     if resp.status_code != 200:
-        raise RuntimeError(f"Steam API returned {resp.status_code}")
+        raise RuntimeError(f"Github API returned {resp.status_code}")
     j = resp.json()
     return (packaging.version.Version(j["name"]), j["assets"][0]["browser_download_url"]) #TODO: don't make assumption about assets?
