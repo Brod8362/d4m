@@ -51,6 +51,12 @@ class DivaSimpleMod():
                 return fd.read()
         return None
 
+    def get_thumbnail_path(self):
+        if self.has_thumbnail():
+            return os.path.join(self.path, "preview.png")
+        else:
+            None
+
     def is_simple(self):
         return True
 

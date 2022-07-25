@@ -9,7 +9,6 @@ import d4m.api as api
 import tempfile
 import shutil
 import toml
-from PIL import Image
 
 class ModManager():
     def __init__(self, base_path, mods_path = None):
@@ -62,10 +61,8 @@ class ModManager():
             img_url = data["image"]
             resp = requests.get(img_url)
             if resp.status_code == 200:
-                thumb_image: Image.Image = Image.open(BytesIO(resp.content))
-                resized = thumb_image.resize((128, 128))
                 with open(os.path.join(mod.path, "preview.png"), "wb") as preview_fd:
-                    resized.save(preview_fd, "PNG")
+                    preview_fd.write(resp.content)
                     
 
     def install_mod(self, mod_id: int, fetch_thumbnail=False): #mod_id and hash are used for modinfo.toml

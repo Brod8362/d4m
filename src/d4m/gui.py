@@ -3,6 +3,7 @@ from PySide6.QtGui import QColor
 import PySide6.QtWidgets as qwidgets
 import PySide6.QtConcurrent
 import PySide6.QtCore 
+from PySide6.QtGui import QImage
 import sys
 
 import d4m.common
@@ -193,7 +194,14 @@ class D4mGUI():
             mod_table.setHorizontalHeaderLabels(["Thumbnail", "Mod Name", "Enabled", "Mod Author(s)", "Mod Version", "Gamebanana ID"])
             mod_table.setRowCount(len(mod_manager.mods))
             for (index, mod) in enumerate(mod_manager.mods):
-                mod_image = qwidgets.QTableWidgetItem("image here")
+                mod_image = qwidgets.QTableWidgetItem("No Preview")
+                if mod.has_thumbnail():
+                    img = QImage()
+                    img.load(mod.get_thumbnail_path())
+                    scaled = img.scaled(128, 128, aspectMode=PySide6.QtCore.Qt.AspectRatioMode.KeepAspectRatio)
+                    if img.load(mod.get_thumbnail_path()):
+                        mod_image.setData(PySide6.QtCore.Qt.DecorationRole, scaled)
+                        mod_image.setText("")
                 mod_name = qwidgets.QTableWidgetItem(mod.name)
                 mod_name.setToolTip(mod.name)
                 mod_enabled = qwidgets.QTableWidgetItem("Enabled" if mod.enabled else "Disabled")
