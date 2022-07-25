@@ -14,9 +14,11 @@ from d4m.manage import ModManager
 import d4m.api
 from d4m.divamod import DivaSimpleMod
 
+LOG_HISTORY = []
 
 def log_msg(content: str):
-    pass
+    LOG_HISTORY.append(content)
+    statusbar.showMessage(content)
 
 def show_exc_dialog(what_failed: str, exception: Exception, fatal = True):
     pass
@@ -39,8 +41,9 @@ def on_dml_toggle_click(status_label, mod_manager: ModManager):
     except Exception as e:
         show_exc_dialog("Toggling DML", e, fatal = False)
 
-def on_install_mod():
-    pass #TODO: score lol
+def on_install_mod(mod_manager: ModManager, callback):
+    dialog = ModInstallDialog(mod_manager=mod_manager, callback=callback)
+    dialog.exec()
 
 def on_toggle_mod(selections, mod_manager: ModManager, tree):
     return
@@ -77,21 +80,67 @@ def on_delete_mod(selections, mod_manager: ModManager, tree):
             mod_manager.delete_mod(mod)
             log_msg(f"Deleted {mod}")
 
+class ModInstallDialog(qwidgets.QDialog):
+    def __init__(self, mod_manager=None, callback=None, parent=None):
+        super(ModInstallDialog, self).__init__(parent)
+
+        self.win_layout = qwidgets.QVBoxLayout()
+        self.search_layout = qwidgets.QHBoxLayout()
+
+        self.mod_name_input = qwidgets.QLineEdit("")
+        self.mod_name_input.setPlaceholderText("Search...")
+        self.status_label = qwidgets.QLabel("")
+        
+        self.search_button = qwidgets.QPushButton("Search")
+        self.found_mod_list = qwidgets.QTableWidget()
+
+        def populate_search_results():
+            try:
+                results = d4m.api.search_mods(self.mod_name_input.text())
+            except RuntimeError as e:
+                self.status_label.setText(f"<strong color=red>{e}</strong>")
+                return
+            self.status_label.setText(f"Found <strong>{len(results)}</strong> mods matching <em>{self.mod_name_input.text()}</em>")
+            self.found_mod_list.clear()
+            self.found_mod_list.setColumnCount(3)
+            self.found_mod_list.setHorizontalHeaderLabels(["Mod", "Mod ID"])
+            self.found_mod_list.setRowCount(len(results))
+            for index, (m_id, m_name) in enumerate(results):
+                mod_label = qwidgets.QTableWidgetItem(m_name)
+                mod_id_label = qwidgets.QTableWidgetItem(str(m_id))
+                self.found_mod_list.setItem(index, 0, mod_label)
+                self.found_mod_list.setItem(index, 1, mod_id_label)
+
+        # Populate user interactable fields
+        self.search_layout.addWidget(self.mod_name_input)
+        self.search_layout.addWidget(self.search_button)
+        self.search_button.clicked.connect(populate_search_results)
+
+        # Populate main layout
+        self.win_layout.addLayout(self.search_layout)
+        self.win_layout.addWidget(self.status_label)
+        self.win_layout.addWidget(self.found_mod_list)
+
+        self.setLayout(self.win_layout)
+        self.setWindowTitle("d4m - Install new mods")
+        
 
 class D4mGUI():
-    def __init__(self, qapp: qwidgets.QApplication, mod_manager: ModManager):
-        # mod_manager.check_for_updates()
-        #TODO: re-enable update checking
+    def __init__(self, qapp: qwidgets.QApplication, mod_manager: ModManager, dml_version):
+        mod_manager.check_for_updates()
         window = qwidgets.QWidget()
         main_widget = qwidgets.QVBoxLayout(window)
         top_row = qwidgets.QHBoxLayout()
         mod_table = qwidgets.QTableWidget()
         mod_buttons = qwidgets.QHBoxLayout()
+        global statusbar
         statusbar = qwidgets.QStatusBar()
-        statusbar.showMessage(f"d4m v{d4m.common.VERSION}")
+        ver_str = f"d4m v{d4m.common.VERSION}"
+        log_msg(ver_str)
+        window.setWindowTitle(ver_str)
 
         # Propogate top row
-        dml_status_label = qwidgets.QLabel("DivaModLoader (version here)")
+        dml_status_label = qwidgets.QLabel(f"DivaModLoader {dml_version}")
         dml_enable_label = qwidgets.QLabel("ENABLED" if mod_manager.enabled else "DISABLED")
         dml_toggle_button = qwidgets.QPushButton("Toggle DivaModLoader")
         dml_toggle_button.clicked.connect(lambda *_: on_dml_toggle_click(dml_enable_label, mod_manager))
@@ -104,21 +153,25 @@ class D4mGUI():
 
         # Propogate mod list
         mod_table.setColumnCount(5) #image, name, creator, version
-        mod_table.setHorizontalHeaderLabels(["Thumbnail", "Mod Name", "Mod Author(s)", "Mod Version", "Gamebanana ID"])
         def populate_modlist():
             mod_table.clear()
+            mod_table.setHorizontalHeaderLabels(["Thumbnail", "Mod Name", "Mod Author(s)", "Mod Version", "Gamebanana ID"])
             mod_table.setRowCount(len(mod_manager.mods))
             for (index, mod) in enumerate(mod_manager.mods):
                 mod_image = qwidgets.QTableWidgetItem("image here")
                 mod_name = qwidgets.QTableWidgetItem(mod.name)
                 mod_author = qwidgets.QTableWidgetItem(mod.author)
                 mod_version = qwidgets.QTableWidgetItem(str(mod.version))
-                if not mod.is_simple():
-                    #TODO: re-enable this
-                    # if mod.is_out_of_date():
-                    #     mod_version.setBackground(QColor.fromRgb(255, 255, 0))
+                if mod.is_simple():
+                    mod_version = qwidgets.QTableWidgetItem(str(mod.version)+"*")
+                    mod_version.setToolTip("This mod is missing metadata information and the latest version cannot be determined.")
+                else:
+                    if mod.is_out_of_date():
+                        mod_version.setBackground(QColor.fromRgb(255, 255, 0))
+                        mod_version.setToolTip("A new version is available.")
                     url = f"https://gamebanana.com/mods/{mod.id}"
                     mod_id = qwidgets.QTableWidgetItem(f"<a href=\"{url}\">{mod.id}</a>")
+                    mod_version = qwidgets.QTableWidgetItem(str(mod.version))
                     mod_table.setItem(index, 4, mod_id)
                 mod_table.setItem(index, 0, mod_image)
                 mod_table.setItem(index, 1, mod_name)
@@ -136,7 +189,7 @@ class D4mGUI():
 
         # Propogate action buttons
         install_mod_button = qwidgets.QPushButton("Install Mods...")
-        install_mod_button.clicked.connect(lambda *_: autoupdate(on_install_mod))
+        install_mod_button.clicked.connect(lambda *_: autoupdate(on_install_mod, mod_manager, populate_modlist))
 
         toggle_mod_button = qwidgets.QPushButton("Toggle Selected")
         toggle_mod_button.clicked.connect(lambda *_: autoupdate(on_toggle_mod, None, mod_manager, None))
@@ -185,7 +238,7 @@ def main():
 
     mod_manager = ModManager(megamix_path, mods_path=dml_mods_dir)
     app = qwidgets.QApplication([])
-    D4mGUI(app, mod_manager)
+    D4mGUI(app, mod_manager, dml_version)
 
 if __name__ == "__main__":
     main()
