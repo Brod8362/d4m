@@ -4,7 +4,7 @@ from PySide6.QtGui import QColor
 import PySide6.QtWidgets as qwidgets
 import PySide6.QtConcurrent
 import PySide6.QtCore 
-from PySide6.QtGui import QImage
+from PySide6.QtGui import QImage, QDesktopServices
 import sys
 
 import d4m.common
@@ -325,6 +325,7 @@ def main():
                     msgbox.setText("DivaModLoader installed successfully.")
                     msgbox.setStandardButtons(qwidgets.QMessageBox.Ok)
                     msgbox.setIcon(qwidgets.QMessageBox.Icon.Information)
+                    msgbox.setWindowTitle("d4m")
                     msgbox.exec()
                 except:
                     msgbox = qwidgets.QMessageBox()
@@ -332,15 +333,20 @@ def main():
                     msgbox.setIcon()
                     msgbox.setStandardButtons(qwidgets.QMessageBox.Ok)
                     msgbox.setIcon(qwidgets.QMessageBox.Icon.Critical)
+                    msgbox.setWindowTitle("d4m")
                     msgbox.exec()
                     sys.exit(0)
         else:
             msgbox = qwidgets.QMessageBox()
             content = f"DivaModLoader is not installed, and your platform does not support automatic installs. Please manually install DivaModLoader."
             msgbox.setText(content)
-            msgbox.setStandardButtons(qwidgets.QMessageBox.Ok)
+            msgbox.setStandardButtons(qwidgets.QMessageBox.Ok | qwidgets.QMessageBox.Open)
             msgbox.setIcon(qwidgets.QMessageBox.Icon.Warning)
-            msgbox.exec()
+            msgbox.setWindowTitle("d4m")
+            res = msgbox.exec()
+            if res == qwidgets.QMessageBox.StandardButton.Ok:
+                _, dml_download = d4m.manage.check_modloader_version()
+                QDesktopServices.openUrl(dml_download)
             sys.exit(0)
     
     dml_version, dml_enabled, dml_mods_dir = d4m.common.get_modloader_info(megamix_path)
@@ -360,6 +366,7 @@ def main():
                         msgbox.setText("DivaModLoader updated successfully.")
                         msgbox.setStandardButtons(qwidgets.QMessageBox.Ok)
                         msgbox.setIcon(qwidgets.QMessageBox.Icon.Information)
+                        msgbox.setWindowTitle("d4m")
                         msgbox.exec()
                         dml_version = dml_latest
                     except:
@@ -368,6 +375,7 @@ def main():
                         msgbox.setIcon()
                         msgbox.setStandardButtons(qwidgets.QMessageBox.Ok)
                         msgbox.setIcon(qwidgets.QMessageBox.Icon.Critical)
+                        msgbox.setWindowTitle("d4m")
                         msgbox.exec()
                         sys.exit(0)
             else:
@@ -376,12 +384,14 @@ def main():
                 msgbox.setText(content)
                 msgbox.setStandardButtons(qwidgets.QMessageBox.Ok)
                 msgbox.setIcon(qwidgets.QMessageBox.Icon.Information)
+                msgbox.setWindowTitle("d4m")
                 msgbox.exec()
     except:
         content = f"Cannot fetch latest DivaModLoader version: {format_exc()}"
         msgbox.setText(content)
         msgbox.setStandardButtons(qwidgets.QMessageBox.Ok)
         msgbox.setIcon(qwidgets.QMessageBox.Icon.Critical)
+        msgbox.setWindowTitle("d4m")
         msgbox.exec()
 
     mod_manager = ModManager(megamix_path, mods_path=dml_mods_dir)
