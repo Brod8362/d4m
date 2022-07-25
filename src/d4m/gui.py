@@ -40,7 +40,7 @@ def on_dml_toggle_click(root, status_label, mod_manager: ModManager):
     except Exception as e:
         show_exc_dialog("Toggling DML", e, fatal = False)
 
-def on_toggle_mod(selections, mod_manager: ModManager):
+def on_toggle_mod(selections, mod_manager: ModManager, tree: ttk.Treeview):
     for selection in selections:
         mod = next(filter(lambda mod: mod.name == selection, mod_manager.mods))
         if mod_manager.is_enabled(mod):
@@ -50,7 +50,7 @@ def on_toggle_mod(selections, mod_manager: ModManager):
             mod_manager.enable(mod)
             log_msg(f"Enabled {mod}")
 
-def on_update_mod(selections, mod_manager: ModManager):
+def on_update_mod(selections, mod_manager: ModManager, tree: ttk.Treeview):
     log_msg(f"Attempting to update {len(selections)} mods")
     for selection in selections:
         mod = next(filter(lambda mod: mod.name == selection, mod_manager.mods))
@@ -64,14 +64,12 @@ def on_update_mod(selections, mod_manager: ModManager):
             else:
                 log_msg(f"{mod} is already up to date.")
 
-def on_delete_mod(selections, mod_manager: ModManager, treeview: ttk.Treeview):
+def on_delete_mod(selections, mod_manager: ModManager):
     content = f"Are you sure you want to delete {len(selections)} mods?\n"+", ".join(selections)
     if tkinter.messagebox.askyesno(title = f"Delete {len(selections)} mods?", message=content):
         for selection in selections:
             mod = next(filter(lambda mod: mod.name == selection, mod_manager.mods))
             mod_manager.delete_mod(mod)
-            treeview.delete(selection)
-            treeview.update_idletasks()
             log_msg(f"Deleted {mod}")
 
 class D4mGUI(tkinter.Frame):
@@ -90,24 +88,36 @@ class D4mGUI(tkinter.Frame):
         dml_toggle_text = tkinter.StringVar(self, "ENABLED" if mod_manager.enabled else "DISABLED")
         tkinter.Label(top_row_frame, textvariable=dml_toggle_text).pack(side=tkinter.LEFT)
         tkinter.Button(top_row_frame, text="Toggle DML", command=lambda *args: on_dml_toggle_click(self, dml_toggle_text, mod_manager)).pack(side=tkinter.LEFT)
-        tkinter.Label(top_row_frame, text=f"{len(mod_manager.mods)} mods").pack(side=tkinter.RIGHT)
+        mod_count_value = tkinter.StringVar(self, f"-- mods")
+        tkinter.Label(top_row_frame, textvariable=mod_count_value).pack(side=tkinter.RIGHT)
 
-        for (index, mod) in enumerate(mod_manager.mods):
-            create_mod_elem(mod, mod_list_tree)
+        def populate_modlist():
+            for a in mod_list_tree.get_children():
+                mod_list_tree.delete(a)
+            mod_list_tree.delete()
+            for (index, mod) in enumerate(mod_manager.mods):
+                create_mod_elem(mod, mod_list_tree)
+            mod_count_value.set(f"{len(mod_manager.mods)} mods")
+
+        populate_modlist()
+
+        def autoupdate_button(func, *args):
+            func(*args)
+            populate_modlist()
 
         tkinter.Button(mod_actions_frame, 
             text="Toggle Mod", 
-            command = lambda *_: on_toggle_mod(mod_list_tree.selection(), mod_manager)
+            command = lambda *_: autoupdate_button(on_toggle_mod, mod_list_tree.selection(), mod_manager)
         ).pack(side=tkinter.LEFT)
 
         tkinter.Button(mod_actions_frame, 
             text="Update Mod", 
-            command = lambda *_: on_update_mod(mod_list_tree.selection(), mod_manager)
+            command = lambda *_: autoupdate_button(on_update_mod, mod_list_tree.selection(), mod_manager)
         ).pack(side=tkinter.LEFT)
 
         tkinter.Button(mod_actions_frame, 
             text="Delete Mod", 
-            command = lambda *_: on_delete_mod(mod_list_tree.selection(), mod_manager, mod_list_tree)
+            command = lambda *_: autoupdate_button(on_delete_mod, mod_list_tree.selection(), mod_manager)
         ).pack(side=tkinter.LEFT)
 
         top_row_frame.pack(side=tkinter.TOP, fill=tkinter.X)
