@@ -19,7 +19,7 @@ class DivaSimpleMod():
         with open(os.path.join(path, "config.toml")) as mod_conf_fd:
                 data = toml.load(mod_conf_fd)
                 self.version = None if "version" not in data else packaging.version.Version(data["version"])
-                self.name = data.get("name", path)
+                self.name = data.get("name", os.path.basename(path))
                 self.author = data.get("author", "unknown author")
                 self.enabled = data["enabled"]
 
