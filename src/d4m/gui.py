@@ -1,13 +1,9 @@
 #!/usr/bin/env python
-import enum
 from PySide6.QtGui import QColor
 import PySide6.QtWidgets as qwidgets
 import PySide6.QtConcurrent
-import traceback
 import PySide6.QtCore 
 import sys
-
-from django.forms import modelform_factory
 
 import d4m.common
 import d4m.manage
@@ -42,14 +38,12 @@ def on_dml_toggle_click(status_label, mod_manager: ModManager):
     except Exception as e:
         show_exc_dialog("Toggling DML", e, fatal = False)
 
-def on_install_mod(mod_manager: ModManager, callback):
+def on_install_mod(_, mod_manager: ModManager, callback):
     dialog = ModInstallDialog(mod_manager=mod_manager, callback=callback)
     dialog.exec()
 
 def on_toggle_mod(selections, mod_manager: ModManager):
-    return
-    for selection in selections:
-        mod = next(filter(lambda mod: mod.name == selection, mod_manager.mods))
+    for mod in selections:
         if mod_manager.is_enabled(mod):
             mod_manager.disable(mod)
             log_msg(f"Disabled {mod}")
@@ -58,10 +52,10 @@ def on_toggle_mod(selections, mod_manager: ModManager):
             log_msg(f"Enabled {mod}")
 
 def on_update_mod(selections, mod_manager: ModManager):
-    return
+    #TODO: progress bar dialog
     log_msg(f"Attempting to update {len(selections)} mods")
-    for selection in selections:
-        mod = next(filter(lambda mod: mod.name == selection, mod_manager.mods))
+    updated = 0
+    for mod in selections:
         if mod.is_simple():
             log_msg(f"{str(mod)} has an unknown origin and cannot be updated.")
         else:
@@ -69,17 +63,31 @@ def on_update_mod(selections, mod_manager: ModManager):
                 log_msg(f"Updating {mod}...")
                 mod_manager.update(mod)
                 log_msg(f"{mod} updated successfully.")
+                updated+=1
             else:
                 log_msg(f"{mod} is already up to date.")
+    log_msg(f"Updated {updated} mods")
 
 def on_delete_mod(selections, mod_manager: ModManager):
-    return
-    content = f"Are you sure you want to delete {len(selections)} mods?\n"+", ".join(selections)
-    if tkinter.messagebox.askyesno(title = f"Delete {len(selections)} mods?", message=content):
-        for selection in selections:
-            mod = next(filter(lambda mod: mod.name == selection, mod_manager.mods))
-            mod_manager.delete_mod(mod)
-            log_msg(f"Deleted {mod}")
+    content = f"Are you sure you want to delete <strong>{len(selections)}</strong> mod(s)?\n"+", ".join(map(lambda x: x.name, selections))
+    msgbox = qwidgets.QMessageBox()
+    msgbox.setText(content)
+    msgbox.setStandardButtons(qwidgets.QMessageBox.Yes | qwidgets.QMessageBox.No)
+    msgbox.setIcon(qwidgets.QMessageBox.Icon.Question)
+    res = msgbox.exec()
+    if res == qwidgets.QMessageBox.StandardButton.Yes:
+        success = 0
+        for mod in selections:
+            try:
+                mod_manager.delete_mod(mod)
+                log_msg(f"Deleted {mod}")
+                success+=1
+            except Exception as e:
+                log_msg(f"Failed to delete {mod.name}: {e}")
+        log_msg(f"Deleted {success} mods")
+
+def on_refresh_click(selections, mod_manager: ModManager):
+    mod_manager.reload()
 
 class ModInstallDialog(qwidgets.QDialog):
     def __init__(self, mod_manager=None, callback=None, parent=None):
@@ -126,13 +134,22 @@ class ModInstallDialog(qwidgets.QDialog):
         self.setWindowTitle("d4m - Install new mods")
         
 
-class VoidFuncWorker(PySide6.QtCore.QRunnable):
-    def __init__(self, void_func, parent=None):
-        super(VoidFuncWorker, self).__init__(parent)
-        self.f = void_func
+class BackgroundUpdateWorker(PySide6.QtCore.QRunnable):
+    def __init__(self, mod_manager, populate_func, parent=None):
+        super(BackgroundUpdateWorker, self).__init__(parent)
+        self.updates_ready = False
+        self.mod_manager = mod_manager
+        self.populate = populate_func
 
     def run(self):
-        self.f()
+        log_msg("Checking for updates...")
+        try:
+            self.mod_manager.check_for_updates()
+            self.populate(update_check=True)
+            log_msg("Update check complete.")
+        except Exception as e:
+            log_msg(f"Update check failed: {e}")
+        self.updates_ready = True
 
 class D4mGUI():
     def __init__(self, qapp: qwidgets.QApplication, mod_manager: ModManager, dml_version):
@@ -164,6 +181,7 @@ class D4mGUI():
         mod_table.setColumnCount(6) #image, name, creator, version
         def populate_modlist(update_check=True):
             mod_table.clear()
+            mod_table.setSelectionBehavior(qwidgets.QAbstractItemView.SelectionBehavior.SelectRows)
             mod_table.setHorizontalHeaderLabels(["Thumbnail", "Mod Name", "Enabled", "Mod Author(s)", "Mod Version", "Gamebanana ID"])
             mod_table.setRowCount(len(mod_manager.mods))
             for (index, mod) in enumerate(mod_manager.mods):
@@ -192,40 +210,36 @@ class D4mGUI():
                 mod_table.setItem(index, 4, mod_version)
                 enabled_mod_count = sum(1 for m in mod_manager.mods if m.enabled)
                 mod_count_label.setText(f"{len(mod_manager.mods)} mods / {enabled_mod_count} enabled")
-
-        def background_update_check(*args):
-            log_msg("Checking for updates...")
-            try:
-                mod_manager.check_for_updates()
-                populate_modlist(update_check=True)
-                log_msg("Update check complete.")
-            except Exception as e:
-                log_msg(f"Update check failed: {e}")
+           
 
         populate_modlist(update_check=False)
 
-        def autoupdate(func, *args):
-            func(*args)
-            populate_modlist()
+        buw = BackgroundUpdateWorker(mod_manager, populate_modlist)
 
-        fw = VoidFuncWorker(background_update_check)
-        threadpool.start(fw)
+        def autoupdate(func, *args):
+            """Selected mods will automatically be passed in as first argument."""
+            selected_rows = set(map(lambda x: x.row(), mod_table.selectedIndexes()))
+            selected_mods = list(map(lambda i: mod_manager.mods[i], selected_rows))
+            func(selected_mods, *args)
+            populate_modlist(update_check=buw.updates_ready)
+
+        threadpool.start(buw)
 
         # Propogate action buttons
         install_mod_button = qwidgets.QPushButton("Install Mods...")
         install_mod_button.clicked.connect(lambda *_: autoupdate(on_install_mod, mod_manager, populate_modlist))
 
         toggle_mod_button = qwidgets.QPushButton("Toggle Selected")
-        toggle_mod_button.clicked.connect(lambda *_: autoupdate(on_toggle_mod, None, mod_manager, None))
+        toggle_mod_button.clicked.connect(lambda *_: autoupdate(on_toggle_mod, mod_manager))
 
         update_mod_button = qwidgets.QPushButton("Update Selected")
-        update_mod_button.clicked.connect(lambda *_: autoupdate(on_update_mod, None, mod_manager, None))
+        update_mod_button.clicked.connect(lambda *_: autoupdate(on_update_mod, mod_manager))
 
         delete_mod_button = qwidgets.QPushButton("Delete Selected")
-        delete_mod_button.clicked.connect(lambda *_: autoupdate(on_delete_mod, None, mod_manager, None))
+        delete_mod_button.clicked.connect(lambda *_: autoupdate(on_delete_mod, mod_manager))
 
         refresh_mod_button = qwidgets.QPushButton("Refresh")
-        refresh_mod_button.clicked.connect(lambda *_: autoupdate(mod_manager.reload))
+        refresh_mod_button.clicked.connect(lambda *_: autoupdate(on_refresh_click, mod_manager))
 
         mod_buttons.addWidget(install_mod_button)
         mod_buttons.addWidget(toggle_mod_button)
