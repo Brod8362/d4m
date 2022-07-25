@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 
 import colorama
@@ -115,6 +116,18 @@ def main():
     print(f"d4m v{VERSION}")
 
     megamix_path = os.environ.get("D4M_INSTALL_DIR", get_megamix_path())
+
+    if not megamix_path or not os.path.exists(megamix_path):
+        print("Megamix does not appear to be installed.", file=sys.stderr)
+        if megamix_path:
+            print(f"Expected it to be at {megamix_path!r} but it is not there.", file=sys.stderr)
+        if "D4M_INSTALL_DIR" not in os.environ:
+            print("This tool uses Steam's library path to figure out where the installation should be.", file=sys.stderr)
+            print("Override the D4M_INSTALL_DIR environment variable to set this path manually.", file=sys.stderr)
+        elif os.environ.get("D4M_INSTALL_DIR") == "":
+            print("You have D4M_INSTALL_DIR set, but it is an empty string,"
+                  " which is overriding this tool's normal search routine.", file=sys.stderr)
+        sys.exit(1)
 
     if not modloader_is_installed(megamix_path):
         menu = TerminalMenu(["Yes", "No"], title="It doesn't seem like DivaModLoader is installed. Would you like to install the latest version?")
