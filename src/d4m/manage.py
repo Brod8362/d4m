@@ -83,11 +83,11 @@ class ModManager():
                     toml.dump(data, modinfo_fd)
                 new_mod = diva_mod_create(mod_folder_name)
 
+                self.mods.append(new_mod)
+
                 #download mod thumbnail
                 if fetch_thumbnail:
-                   self.fetch_thumbnail()
-
-                self.mods.append(new_mod)
+                   self.fetch_thumbnail(new_mod)
             else:
                 raise RuntimeError("Failed to install mod: archive directory unusable")
 

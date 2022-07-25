@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from traceback import print_exc
 from PySide6.QtGui import QColor
 import PySide6.QtWidgets as qwidgets
 import PySide6.QtConcurrent
@@ -101,30 +102,69 @@ class ModInstallDialog(qwidgets.QDialog):
         self.mod_name_input.setPlaceholderText("Search...")
         self.status_label = qwidgets.QLabel("")
         self.install_button = qwidgets.QPushButton("Install Selected")
-        
+        self.install_button.setEnabled(False)
+        self.progress_bar = qwidgets.QProgressBar()
+
         self.search_button = qwidgets.QPushButton("Search")
         self.found_mod_list = qwidgets.QTableWidget()
 
+        def on_install_click(results):
+            self.install_button.setEnabled(False)
+            self.search_button.setEnabled(False)
+            selected_rows = set(map(lambda x: x.row(), self.found_mod_list.selectedIndexes()))
+            selected_ids = list(map(lambda i: results[i], selected_rows))
+            self.progress_bar.setRange(0, len(selected_ids))
+            self.progress_bar.setValue(0)
+            self.status_label.setText(f"Preparing to install {len(selected_ids)} mod(s)")
+            success = 0
+            for index, (mod_id, mod_name) in enumerate(selected_ids):
+                text = f"<strong>{index+1}/{len(selected_ids)}... Installing mod {mod_name} "
+                self.status_label.setText(text)
+                if not mod_manager.mod_is_installed(mod_id):
+                    try:
+                        mod_manager.install_mod(mod_id, fetch_thumbnail=True)
+                        success += 1
+                    except Exception as e:
+                        print_exc()
+                        r = f"Failed to install {mod_name}: {e}"
+                        self.status_label.setText(text)
+                        log_msg(r)
+                    self.progress_bar.setValue(index+1)
+            #when all is done
+            if success == len(selected_ids):
+                self.status_label.setText(f"Installed {success} mods successfully.")
+            else:
+                self.status_label.setText(f"Installed {success} mods ({len(selected_ids)-success} errors)")
+            self.search_button.setEnabled(True)
+            self.install_button.setEnabled(True)
+
         def populate_search_results():
             try:
+                self.progress_bar.setRange(0,1)
+                self.progress_bar.setValue(0)
                 results = d4m.api.search_mods(self.mod_name_input.text())
             except RuntimeError as e:
                 self.status_label.setText(f"Err: <strong color=red>{e}</strong>")
                 return
+            finally:
+                self.progress_bar.setValue(1)
             self.status_label.setText(f"Found <strong>{len(results)}</strong> mods matching <em>{self.mod_name_input.text()}</em>")
             self.found_mod_list.clear()
             self.found_mod_list.setColumnCount(3)
             self.found_mod_list.setHorizontalHeaderLabels(["Mod", "Mod ID", "Status"])
+            self.found_mod_list.setSelectionBehavior(qwidgets.QAbstractItemView.SelectionBehavior.SelectRows)
             self.found_mod_list.setRowCount(len(results))
             for index, (m_id, m_name) in enumerate(results):
                 mod_label = qwidgets.QTableWidgetItem(m_name)
                 mod_id_label = qwidgets.QTableWidgetItem(str(m_id))
                 mod_installed_label = qwidgets.QTableWidgetItem("Installed" if mod_manager.mod_is_installed(m_id) else "")
-                print(m_id)
                 self.found_mod_list.setItem(index, 0, mod_label)
                 self.found_mod_list.setItem(index, 1, mod_id_label)
                 self.found_mod_list.setItem(index, 2, mod_installed_label)
-                
+            if len(results) > 0:
+                self.install_button.setEnabled(True)
+                self.install_button.clicked.connect(lambda *_: on_install_click(results))
+
         # Populate user interactable fields
         self.search_layout.addWidget(self.mod_name_input)
         self.search_layout.addWidget(self.search_button)
@@ -132,8 +172,9 @@ class ModInstallDialog(qwidgets.QDialog):
 
         # Populate main layout
         self.win_layout.addLayout(self.search_layout)
-        self.win_layout.addWidget(self.status_label)
         self.win_layout.addWidget(self.found_mod_list)
+        self.win_layout.addWidget(self.status_label)
+        self.win_layout.addWidget(self.progress_bar)
         self.win_layout.addWidget(self.install_button)
 
         self.setLayout(self.win_layout)
@@ -186,6 +227,8 @@ class D4mGUI():
         top_row.addWidget(dml_toggle_button)
         top_row.addWidget(mod_count_label)
 
+        image_thumbnail_cache = {}
+
         # Propogate mod list
         mod_table.setColumnCount(6) #image, name, creator, version
         def populate_modlist(update_check=True):
@@ -200,12 +243,15 @@ class D4mGUI():
             for (index, mod) in enumerate(mod_manager.mods):
                 mod_image = qwidgets.QTableWidgetItem("No Preview")
                 if mod.has_thumbnail():
-                    img = QImage()
-                    img.load(mod.get_thumbnail_path())
-                    scaled = img.scaled(128, 128, aspectMode=PySide6.QtCore.Qt.AspectRatioMode.KeepAspectRatio)
-                    if img.load(mod.get_thumbnail_path()):
-                        mod_image.setData(PySide6.QtCore.Qt.DecorationRole, scaled)
-                        mod_image.setText("")
+                    if mod.id in image_thumbnail_cache:
+                        image = image_thumbnail_cache[mod.id]
+                    else:
+                        base = QImage()
+                        base.load(mod.get_thumbnail_path())
+                        image = base.scaled(128, 128, aspectMode=PySide6.QtCore.Qt.AspectRatioMode.KeepAspectRatio)
+                        image_thumbnail_cache[mod.id] = image
+                    mod_image.setData(PySide6.QtCore.Qt.DecorationRole, image)
+                    mod_image.setText("")
                 mod_name = qwidgets.QTableWidgetItem(mod.name)
                 mod_name.setToolTip(mod.name)
                 mod_enabled = qwidgets.QTableWidgetItem("Enabled" if mod.enabled else "Disabled")
