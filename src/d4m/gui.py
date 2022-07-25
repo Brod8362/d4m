@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from traceback import print_exc
+from traceback import format_exc, print_exc
 from PySide6.QtGui import QColor
 import PySide6.QtWidgets as qwidgets
 import PySide6.QtConcurrent
@@ -19,26 +19,13 @@ def log_msg(content: str):
     LOG_HISTORY.append(content)
     statusbar.showMessage(content)
 
-def show_exc_dialog(what_failed: str, exception: Exception, fatal = True):
-    pass
-
-def on_unhandled_exception(*args):
-    pass
-
-def create_mod_elem(mod: DivaSimpleMod, root):
-    return
-    root.insert('', 'end', iid=mod.name, text=str(mod))
-
 def on_dml_toggle_click(status_label, mod_manager: ModManager):
-    try:
-        if mod_manager.enabled:
-            mod_manager.disable_dml()
-            status_label.setText("DISABLED")
-        else:
-            mod_manager.enable_dml()
-            status_label.setText("ENABLED")
-    except Exception as e:
-        show_exc_dialog("Toggling DML", e, fatal = False)
+    if mod_manager.enabled:
+        mod_manager.disable_dml()
+        status_label.setText("DISABLED")
+    else:
+        mod_manager.enable_dml()
+        status_label.setText("ENABLED")
 
 def on_install_mod(_, mod_manager: ModManager, callback):
     dialog = ModInstallDialog(mod_manager=mod_manager, callback=callback)
@@ -325,8 +312,36 @@ def main():
     app = qwidgets.QApplication([])
     megamix_path = d4m.common.get_megamix_path()
     if not d4m.common.modloader_is_installed(megamix_path):
-        #TODO: show annoying popup box :)
-        pass
+        if d4m.common.can_autoupdate_dml():
+            msgbox = qwidgets.QMessageBox()
+            content = f"DivaModLoader is not installed. Would you like d4m to install the latest version of DivaModLoader?"
+            msgbox.setText(content)
+            msgbox.setStandardButtons(qwidgets.QMessageBox.Yes | qwidgets.QMessageBox.No)
+            res = msgbox.exec()
+            if res == qwidgets.QMessageBox.StandardButton.Yes:
+                try:
+                    d4m.manage.install_modloader(megamix_path)
+                    msgbox = qwidgets.QMessageBox()
+                    msgbox.setText("DivaModLoader installed successfully.")
+                    msgbox.setStandardButtons(qwidgets.QMessageBox.Ok)
+                    msgbox.setIcon(qwidgets.QMessageBox.Icon.Information)
+                    msgbox.exec()
+                except:
+                    msgbox = qwidgets.QMessageBox()
+                    msgbox.setText(f"Failed to install DivaModLoader:\n {format_exc()}")
+                    msgbox.setIcon()
+                    msgbox.setStandardButtons(qwidgets.QMessageBox.Ok)
+                    msgbox.setIcon(qwidgets.QMessageBox.Icon.Critical)
+                    msgbox.exec()
+                    sys.exit(0)
+        else:
+            msgbox = qwidgets.QMessageBox()
+            content = f"DivaModLoader is not installed, and your platform does not support automatic installs. Please manually install DivaModLoader."
+            msgbox.setText(content)
+            msgbox.setStandardButtons(qwidgets.QMessageBox.Ok)
+            msgbox.setIcon(qwidgets.QMessageBox.Icon.Warning)
+            msgbox.exec()
+            sys.exit(0)
     
     dml_version, dml_enabled, dml_mods_dir = d4m.common.get_modloader_info(megamix_path)
     try:
@@ -334,12 +349,40 @@ def main():
         if dml_version < dml_latest:
             if d4m.common.can_autoupdate_dml():
                 content = f"A new version of DivaModLoader is available.\nCurrent: {dml_version}\nLatest:{dml_latest}\nDo you want to update?"
-                #TODO: yes/no message box here
+                msgbox = qwidgets.QMessageBox()
+                msgbox.setText(content)
+                msgbox.setStandardButtons(qwidgets.QMessageBox.Yes | qwidgets.QMessageBox.No)
+                res = msgbox.exec()
+                if res == qwidgets.QMessageBox.StandardButton.Yes:
+                    try:
+                        d4m.manage.install_modloader(megamix_path)
+                        msgbox = qwidgets.QMessageBox()
+                        msgbox.setText("DivaModLoader updated successfully.")
+                        msgbox.setStandardButtons(qwidgets.QMessageBox.Ok)
+                        msgbox.setIcon(qwidgets.QMessageBox.Icon.Information)
+                        msgbox.exec()
+                        dml_version = dml_latest
+                    except:
+                        msgbox = qwidgets.QMessageBox()
+                        msgbox.setText(f"Failed to update DivaModLoader:\n {format_exc()}")
+                        msgbox.setIcon()
+                        msgbox.setStandardButtons(qwidgets.QMessageBox.Ok)
+                        msgbox.setIcon(qwidgets.QMessageBox.Icon.Critical)
+                        msgbox.exec()
+                        sys.exit(0)
             else:
-                pass
-                #TODO: dml autoupdate not supported
-    except Exception as e:
-        show_exc_dialog("Fetching latest DML version", e, fatal=False)
+                msgbox = qwidgets.QMessageBox()
+                content = f"A new version of DivaModLoader is available, but your platform does not support automatic installs."
+                msgbox.setText(content)
+                msgbox.setStandardButtons(qwidgets.QMessageBox.Ok)
+                msgbox.setIcon(qwidgets.QMessageBox.Icon.Information)
+                msgbox.exec()
+    except:
+        content = f"Cannot fetch latest DivaModLoader version: {format_exc()}"
+        msgbox.setText(content)
+        msgbox.setStandardButtons(qwidgets.QMessageBox.Ok)
+        msgbox.setIcon(qwidgets.QMessageBox.Icon.Critical)
+        msgbox.exec()
 
     mod_manager = ModManager(megamix_path, mods_path=dml_mods_dir)
     
