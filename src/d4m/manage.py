@@ -80,6 +80,9 @@ class ModManager():
         ids = [x.id for x in self.mods if not x.is_simple()]
         api.multi_fetch_mod_data(ids)
 
+    def reload(self):
+        self.mods = load_mods(self.mods_path)
+
 def load_mods(path: str) -> "list[DivaSimpleMod]":
     return [diva_mod_create(os.path.join(path, mod_path)) for mod_path in os.listdir(path)]
 
