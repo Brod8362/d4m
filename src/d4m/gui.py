@@ -40,6 +40,9 @@ def on_dml_toggle_click(root, status_label, mod_manager: ModManager):
     except Exception as e:
         show_exc_dialog("Toggling DML", e, fatal = False)
 
+def on_install_mod():
+    pass #TODO: score lol
+
 def on_toggle_mod(selections, mod_manager: ModManager, tree: ttk.Treeview):
     for selection in selections:
         mod = next(filter(lambda mod: mod.name == selection, mod_manager.mods))
@@ -64,7 +67,7 @@ def on_update_mod(selections, mod_manager: ModManager, tree: ttk.Treeview):
             else:
                 log_msg(f"{mod} is already up to date.")
 
-def on_delete_mod(selections, mod_manager: ModManager):
+def on_delete_mod(selections, mod_manager: ModManager, tree: ttk.Treeview):
     content = f"Are you sure you want to delete {len(selections)} mods?\n"+", ".join(selections)
     if tkinter.messagebox.askyesno(title = f"Delete {len(selections)} mods?", message=content):
         for selection in selections:
@@ -99,27 +102,40 @@ class D4mGUI(tkinter.Frame):
                 create_mod_elem(mod, mod_list_tree)
             mod_count_value.set(f"{len(mod_manager.mods)} mods")
 
+        # Propogate modlist
         populate_modlist()
 
         def autoupdate_button(func, *args):
             func(*args)
             populate_modlist()
 
+        # Propogate action buttons
+        tkinter.Button(mod_actions_frame,
+            text="Install Mods...",
+            command = lambda *_: autoupdate_button(on_install_mod)
+        )
+
         tkinter.Button(mod_actions_frame, 
             text="Toggle Mod", 
-            command = lambda *_: autoupdate_button(on_toggle_mod, mod_list_tree.selection(), mod_manager)
+            command = lambda *_: autoupdate_button(on_toggle_mod, mod_list_tree.selection(), mod_manager, mod_list_tree)
         ).pack(side=tkinter.LEFT)
 
         tkinter.Button(mod_actions_frame, 
             text="Update Mod", 
-            command = lambda *_: autoupdate_button(on_update_mod, mod_list_tree.selection(), mod_manager)
+            command = lambda *_: autoupdate_button(on_update_mod, mod_list_tree.selection(), mod_manager, mod_list_tree)
         ).pack(side=tkinter.LEFT)
 
         tkinter.Button(mod_actions_frame, 
             text="Delete Mod", 
-            command = lambda *_: autoupdate_button(on_delete_mod, mod_list_tree.selection(), mod_manager)
+            command = lambda *_: autoupdate_button(on_delete_mod, mod_list_tree.selection(), mod_manager, mod_list_tree)
         ).pack(side=tkinter.LEFT)
 
+        tkinter.Button(mod_actions_frame,
+            text="Refresh",
+            command = lambda *_: autoupdate_button(mod_manager.reload)
+        ).pack(side=tkinter.RIGHT)
+
+        # Populate main GUI
         top_row_frame.pack(side=tkinter.TOP, fill=tkinter.X)
         mod_list_tree.pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=True)
         mod_actions_frame.pack(side=tkinter.TOP, fill=tkinter.BOTH)
@@ -137,8 +153,12 @@ def main():
     try:
         dml_latest, dml_download = d4m.manage.check_modloader_version()
         if dml_version < dml_latest:
-            #TODO: prompt for DML update
-            pass
+            if d4m.common.can_autoupdate_dml():
+                content = f"A new version of DivaModLoader is available.\nCurrent: {dml_version}\nLatest:{dml_latest}\nDo you want to update?"
+                tkinter.messagebox.askyesno(title="DivaModLoader Update Available", message=content)
+            else:
+                pass
+                #dml autoupdate not supported
     except Exception as e:
         show_exc_dialog("Fetching latest DML version", e, fatal=False)
 
