@@ -76,30 +76,27 @@ def menu_manage(mod_manager: ModManager):
         ]
         inner_menu = TerminalMenu(inner_options, title=str(selected_mod))
         inner_choice = inner_menu.show()
-        match inner_choice:
-            case 0:
-                pass
-            case 1:
-                if mod_is_enabled:
-                    mod_manager.disable(selected_mod)
-                    print(f"{selected_mod} {colorama.Fore.RED}disabled.{colorama.Fore.RESET}")
-                else:
-                    mod_manager.enable(selected_mod)
-                    print(f"{selected_mod} {colorama.Fore.GREEN}enabled.{colorama.Fore.RESET}")
-            case 2:
-                if selected_mod.is_simple():
-                    print("This mod has an unknown origin and thus cannot be auto-updated. Try deleting it and reinstalling it using d4m.")
-                else:
-                    if selected_mod.is_out_of_date():
-                        mod_manager.delete_mod(selected_mod)
-                        mod_manager.install_mod(selected_mod.id)
-                    else:
-                        print(f"{selected_mod.name} is up-to-date.")
-            case 3:
-                check_opt = TerminalMenu(["Cancel", f"Yes, delete {selected_mod.name}"], title=f"Are you sure you want to delete {selected_mod}?").show()
-                if check_opt == 1:
+        if inner_choice == 1:
+            if mod_is_enabled:
+                mod_manager.disable(selected_mod)
+                print(f"{selected_mod} {colorama.Fore.RED}disabled.{colorama.Fore.RESET}")
+            else:
+                mod_manager.enable(selected_mod)
+                print(f"{selected_mod} {colorama.Fore.GREEN}enabled.{colorama.Fore.RESET}")
+        if inner_choice == 2: 
+            if selected_mod.is_simple():
+                print("This mod has an unknown origin and thus cannot be auto-updated. Try deleting it and reinstalling it using d4m.")
+            else:
+                if selected_mod.is_out_of_date():
                     mod_manager.delete_mod(selected_mod)
-                    print(f"{colorama.Fore.RED}{selected_mod} deleted.{colorama.Fore.RESET}")
+                    mod_manager.install_mod(selected_mod.id)
+                else:
+                    print(f"{selected_mod.name} is up-to-date.")
+        if inner_choice == 3:
+            check_opt = TerminalMenu(["Cancel", f"Yes, delete {selected_mod.name}"], title=f"Are you sure you want to delete {selected_mod}?").show()
+            if check_opt == 1:
+                mod_manager.delete_mod(selected_mod)
+                print(f"{colorama.Fore.RED}{selected_mod} deleted.{colorama.Fore.RESET}")
 
 def do_update_all(mod_manager: ModManager):
     for mod in mod_manager.mods:
