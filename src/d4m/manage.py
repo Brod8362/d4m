@@ -9,6 +9,7 @@ import d4m.api as api
 import tempfile
 import shutil
 import toml
+from PIL import Image
 
 class ModManager():
     def __init__(self, base_path, mods_path = None):
@@ -55,7 +56,19 @@ class ModManager():
         shutil.rmtree(mod.path)
         self.mods.remove(mod)
 
-    def install_mod(self, mod_id: int): #mod_id and hash are used for modinfo.toml
+    def fetch_thumbnail(self, mod: DivaMod, force=False):
+        if force or not mod.has_thumbnail():
+            data = api.fetch_mod_data(mod.id)
+            img_url = data["image"]
+            resp = requests.get(img_url)
+            if resp.status_code == 200:
+                thumb_image: Image.Image = Image.open(BytesIO(resp.content))
+                resized = thumb_image.resize((128, 128))
+                with open(os.path.join(mod.path, "preview.png"), "wb") as preview_fd:
+                    resized.save(preview_fd, "PNG")
+                    
+
+    def install_mod(self, mod_id: int, fetch_thumbnail=False): #mod_id and hash are used for modinfo.toml
         data = api.fetch_mod_data(mod_id)
         with tempfile.TemporaryDirectory(suffix = "d4m") as tempdir:
             api.download_and_extract_mod(data["download"], tempdir)
@@ -72,13 +85,31 @@ class ModManager():
                     }
                     toml.dump(data, modinfo_fd)
                 new_mod = diva_mod_create(mod_folder_name)
+
+                #download mod thumbnail
+                if fetch_thumbnail:
+                   self.fetch_thumbnail()
+
                 self.mods.append(new_mod)
             else:
                 raise RuntimeError("Failed to install mod: archive directory unusable")
 
-    def check_for_updates(self):
+    def check_for_updates(self, get_thumbnails=False):
         ids = [x.id for x in self.mods if not x.is_simple()]
         api.multi_fetch_mod_data(ids)
+        if get_thumbnails:
+            for mod in self.mods:
+                if not mod.is_simple():
+                    try:
+                        self.fetch_thumbnail(mod)
+                    except Exception as e:
+                        print(f"failed to get thumbnail {e}")
+
+    def mod_is_installed(self, s_id) -> bool:
+        for mod in self.mods:
+            if not mod.is_simple() and mod.id == s_id:
+                return True
+        return False
 
     def reload(self):
         self.mods = load_mods(self.mods_path)

@@ -99,6 +99,7 @@ class ModInstallDialog(qwidgets.QDialog):
         self.mod_name_input = qwidgets.QLineEdit("")
         self.mod_name_input.setPlaceholderText("Search...")
         self.status_label = qwidgets.QLabel("")
+        self.install_button = qwidgets.QPushButton("Install Selected")
         
         self.search_button = qwidgets.QPushButton("Search")
         self.found_mod_list = qwidgets.QTableWidget()
@@ -112,14 +113,17 @@ class ModInstallDialog(qwidgets.QDialog):
             self.status_label.setText(f"Found <strong>{len(results)}</strong> mods matching <em>{self.mod_name_input.text()}</em>")
             self.found_mod_list.clear()
             self.found_mod_list.setColumnCount(3)
-            self.found_mod_list.setHorizontalHeaderLabels(["Mod", "Mod ID"])
+            self.found_mod_list.setHorizontalHeaderLabels(["Mod", "Mod ID", "Status"])
             self.found_mod_list.setRowCount(len(results))
             for index, (m_id, m_name) in enumerate(results):
                 mod_label = qwidgets.QTableWidgetItem(m_name)
                 mod_id_label = qwidgets.QTableWidgetItem(str(m_id))
+                mod_installed_label = qwidgets.QTableWidgetItem("Installed" if mod_manager.mod_is_installed(m_id) else "")
+                print(m_id)
                 self.found_mod_list.setItem(index, 0, mod_label)
                 self.found_mod_list.setItem(index, 1, mod_id_label)
-
+                self.found_mod_list.setItem(index, 2, mod_installed_label)
+                
         # Populate user interactable fields
         self.search_layout.addWidget(self.mod_name_input)
         self.search_layout.addWidget(self.search_button)
@@ -129,27 +133,31 @@ class ModInstallDialog(qwidgets.QDialog):
         self.win_layout.addLayout(self.search_layout)
         self.win_layout.addWidget(self.status_label)
         self.win_layout.addWidget(self.found_mod_list)
+        self.win_layout.addWidget(self.install_button)
 
         self.setLayout(self.win_layout)
         self.setWindowTitle("d4m - Install new mods")
         
 
 class BackgroundUpdateWorker(PySide6.QtCore.QRunnable):
-    def __init__(self, mod_manager, populate_func, parent=None):
+    def __init__(self, mod_manager, populate_func, parent=None, on_complete=None):
         super(BackgroundUpdateWorker, self).__init__(parent)
         self.updates_ready = False
         self.mod_manager = mod_manager
         self.populate = populate_func
+        self.on_complete = on_complete
 
     def run(self):
         log_msg("Checking for updates...")
         try:
-            self.mod_manager.check_for_updates()
+            self.mod_manager.check_for_updates(get_thumbnails=True)
             self.populate(update_check=True)
             log_msg("Update check complete.")
         except Exception as e:
             log_msg(f"Update check failed: {e}")
         self.updates_ready = True
+        if self.on_complete:
+            self.on_complete()
 
 class D4mGUI():
     def __init__(self, qapp: qwidgets.QApplication, mod_manager: ModManager, dml_version):
@@ -214,16 +222,12 @@ class D4mGUI():
 
         populate_modlist(update_check=False)
 
-        buw = BackgroundUpdateWorker(mod_manager, populate_modlist)
-
         def autoupdate(func, *args):
             """Selected mods will automatically be passed in as first argument."""
             selected_rows = set(map(lambda x: x.row(), mod_table.selectedIndexes()))
             selected_mods = list(map(lambda i: mod_manager.mods[i], selected_rows))
             func(selected_mods, *args)
             populate_modlist(update_check=buw.updates_ready)
-
-        threadpool.start(buw)
 
         # Propogate action buttons
         install_mod_button = qwidgets.QPushButton("Install Mods...")
@@ -234,6 +238,7 @@ class D4mGUI():
 
         update_mod_button = qwidgets.QPushButton("Update Selected")
         update_mod_button.clicked.connect(lambda *_: autoupdate(on_update_mod, mod_manager))
+        update_mod_button.setEnabled(False)
 
         delete_mod_button = qwidgets.QPushButton("Delete Selected")
         delete_mod_button.clicked.connect(lambda *_: autoupdate(on_delete_mod, mod_manager))
@@ -246,6 +251,9 @@ class D4mGUI():
         mod_buttons.addWidget(update_mod_button)
         mod_buttons.addWidget(delete_mod_button) 
         mod_buttons.addWidget(refresh_mod_button)
+
+        buw = BackgroundUpdateWorker(mod_manager, populate_modlist, on_complete=lambda *_:update_mod_button.setEnabled(True))
+        threadpool.start(buw)
 
         # # Populate main GUI
         main_widget.addLayout(top_row)
