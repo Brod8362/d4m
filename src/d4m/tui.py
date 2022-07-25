@@ -118,7 +118,7 @@ def main():
     megamix_path = os.environ.get("D4M_INSTALL_DIR", get_megamix_path())
 
     if not megamix_path or not os.path.exists(megamix_path):
-        print("Megamix does not appear to be installed.", file=sys.stderr)
+        print("Project Diva MegaMix+ does not appear to be installed.", file=sys.stderr)
         if megamix_path:
             print(f"Expected it to be at {megamix_path!r} but it is not there.", file=sys.stderr)
         if "D4M_INSTALL_DIR" not in os.environ:
