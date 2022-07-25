@@ -207,17 +207,23 @@ class D4mGUI():
         dml_enable_label = qwidgets.QLabel("ENABLED" if mod_manager.enabled else "DISABLED")
         dml_toggle_button = qwidgets.QPushButton("Toggle DivaModLoader")
         dml_toggle_button.clicked.connect(lambda *_: on_dml_toggle_click(dml_enable_label, mod_manager))
+        run_diva_button = qwidgets.QPushButton("Run Project Diva")
+        run_diva_button.clicked.connect(lambda *_: QDesktopServices.openUrl(f"steam://run/{d4m.common.MEGAMIX_APPID}"))
+        open_diva_folder = qwidgets.QPushButton("Open Diva Install Folder")
+        open_diva_folder.clicked.connect(lambda *_: QDesktopServices.openUrl(f"file://{mod_manager.base_path}"))
         mod_count_label = qwidgets.QLabel("-- mods / -- enabled")
         
         top_row.addWidget(dml_status_label)
-        top_row.addWidget(dml_enable_label)
+        top_row.addWidget(dml_enable_label, alignment=PySide6.QtCore.Qt.AlignLeft)
         top_row.addWidget(dml_toggle_button)
+        top_row.addWidget(run_diva_button)
+        top_row.addWidget(open_diva_folder)
         top_row.addWidget(mod_count_label)
 
         image_thumbnail_cache = {}
 
         # Propogate mod list
-        mod_table.setColumnCount(6) #image, name, creator, version
+        mod_table.setColumnCount(6) #thumbnail, image, name, creator, version, id
         def populate_modlist(update_check=True):
             mod_table.clear()
             mod_table.setSelectionBehavior(qwidgets.QAbstractItemView.SelectionBehavior.SelectRows)
@@ -254,7 +260,9 @@ class D4mGUI():
                         mod_version.setBackground(QColor.fromRgb(255, 255, 0))
                         mod_version.setToolTip("A new version is available.")
                     url = f"https://gamebanana.com/mods/{mod.id}"
-                    mod_id = qwidgets.QTableWidgetItem(f"<a href=\"{url}\">{mod.id}</a>")
+                    # mod_id = qwidgets.QTableWidgetItem(f"<a href=\"{url}\">{mod.id}</a>")
+                    #TODO: how to embed URL in table?
+                    mod_id = qwidgets.QTableWidgetItem(str(mod.id))
                     mod_table.setItem(index, 5, mod_id)
                 mod_table.setItem(index, 0, mod_image)
                 mod_table.setItem(index, 1, mod_name)
