@@ -20,11 +20,11 @@ def show_exc_dialog(what_failed: str, exception: Exception, fatal = True):
     f = tkinter.messagebox.showerror if fatal else tkinter.messagebox.showwarning
     f(what_failed, traceback.format_exc())
     if fatal:
-        quit()
+        sys.exit(1)
 
 def on_unhandled_exception(*args):
     tkinter.messagebox.showerror(title="Uncaught Exception", message=traceback.format_exc())
-    quit()
+    sys.exit(1)
 
 def create_mod_elem(mod: DivaSimpleMod, root: ttk.Treeview):
     root.insert('', 'end', iid=mod.name, text=str(mod))
