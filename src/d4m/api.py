@@ -16,7 +16,7 @@ DIVA_GAME_ID = 16522
 
 mod_info_cache = {}
 
-def multi_fetch_mod_data(mod_ids: list[int]) -> list[dict]:
+def multi_fetch_mod_data(mod_ids: "list[int]") -> "list[dict]":
     mod_data = []
     need_fetch = []
     for mod_id in mod_ids:
@@ -55,7 +55,7 @@ def multi_fetch_mod_data(mod_ids: list[int]) -> list[dict]:
     return mod_data
         
 
-def fetch_mod_data(mod_id: int) -> dict:
+def fetch_mod_data(mod_id: int) -> "dict":
     """
     dict w/ keys id, hash, download
     """
