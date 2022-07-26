@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from re import L
 from traceback import format_exc, print_exc
 from PySide6.QtGui import QColor
 import PySide6.QtWidgets as qwidgets
@@ -6,6 +7,8 @@ import PySide6.QtConcurrent
 import PySide6.QtCore 
 from PySide6.QtGui import QImage, QDesktopServices, QAction
 import sys
+
+import packaging.version
 
 import d4m.common
 import d4m.manage
@@ -156,6 +159,7 @@ class ModInstallDialog(qwidgets.QDialog):
             self.found_mod_list.clear()
             self.found_mod_list.setColumnCount(5)
             self.found_mod_list.setHorizontalHeaderLabels(["Mod", "Mod ID", "Likes", "Downloads", "Status",])
+            self.found_mod_list.horizontalHeader().setSectionResizeMode(0, qwidgets.QHeaderView.ResizeMode.ResizeToContents)
             self.found_mod_list.setEditTriggers(qwidgets.QAbstractItemView.NoEditTriggers)
             self.found_mod_list.setSelectionBehavior(qwidgets.QAbstractItemView.SelectionBehavior.SelectRows)
             self.found_mod_list.horizontalHeader().setStretchLastSection(True)
@@ -163,6 +167,7 @@ class ModInstallDialog(qwidgets.QDialog):
             for index, (m_id, m_name) in enumerate(results):
                 detailed_mod_info = d4m.api.fetch_mod_data(m_id) #should already be fetched and cached, no performance concerns here
                 mod_label = qwidgets.QTableWidgetItem(m_name)
+                mod_label.setToolTip(m_name)
                 mod_id_label = qwidgets.QTableWidgetItem(str(m_id))
                 status = "Available"
                 if mod_manager.mod_is_installed(m_id):
@@ -242,10 +247,36 @@ class BackgroundUpdateWorker(PySide6.QtCore.QRunnable):
         if self.on_complete:
             self.on_complete()
 
+class VoidFuncBackgroundWorker(PySide6.QtCore.QRunnable):
+    def __init__(self, func, on_complete= None, parent=None):
+        super(VoidFuncBackgroundWorker, self).__init__(parent)
+        self.func = func
+        self.on_complete = on_complete
+
+    def run(self):
+        self.func()
+        if self.on_complete:
+            self.on_complete()
+
 class D4mGUI():
     def __init__(self, qapp: qwidgets.QApplication, mod_manager: ModManager, dml_version):
         threadpool = PySide6.QtCore.QThreadPool()
         window = qwidgets.QWidget()
+
+        ## Start d4m update check
+        def d4m_update_check():
+            latest, download = d4m.common.fetch_latest_d4m_version()
+            if latest > packaging.version.Version(d4m.common.VERSION):
+                res = show_d4m_infobox(
+                        f"A new verison of d4m is available ({latest})\nWould you like to open the releases page?", 
+                        level="question",
+                        buttons = qwidgets.QMessageBox.Yes | qwidgets.QMessageBox.No
+                    )
+                if res == qwidgets.QMessageBox.StandardButton.Yes:
+                    QDesktopServices.openUrl("https://github.com/Brod8362/d4m/releases")
+
+        d4m_update_worker = VoidFuncBackgroundWorker(d4m_update_check)
+        threadpool.start(d4m_update_worker)
     
         main_widget = qwidgets.QVBoxLayout(window)
 
@@ -259,7 +290,7 @@ class D4mGUI():
         log_msg(ver_str)
         window.setWindowTitle(ver_str)
 
-        # Populate Menu Bar
+        ### Populate Menu Bar
 
         # create menus
         file_menu = menu_bar.addMenu("&File")
@@ -280,7 +311,7 @@ class D4mGUI():
         help_menu.addAction(action_about)
 
 
-        # Propogate top row
+        ### Propogate top row
         dml_status_label = qwidgets.QLabel(f"DivaModLoader {dml_version}")
         dml_enable_label = qwidgets.QLabel("ENABLED" if mod_manager.enabled else "DISABLED")
         dml_toggle_button = qwidgets.QPushButton("Toggle DivaModLoader")
@@ -300,7 +331,7 @@ class D4mGUI():
 
         image_thumbnail_cache = {}
 
-        # Propogate mod list
+        ### Propogate mod list
         mod_table.setColumnCount(7) #thumbnail, image, name, creator, version, id, size
         def populate_modlist(update_check=True):
             mod_table.clear()
@@ -353,7 +384,6 @@ class D4mGUI():
                 enabled_mod_count = sum(1 for m in mod_manager.mods if m.enabled)
                 mod_count_label.setText(f"{len(mod_manager.mods)} mods / {enabled_mod_count} enabled")
            
-
         populate_modlist(update_check=False)
 
         def autoupdate(func, *args):
@@ -373,8 +403,7 @@ class D4mGUI():
         file_menu.addAction(action_load_from)
         file_menu.addAction(action_quit)
 
-
-        # Propogate action buttons
+        ### Propogate action buttons
         install_mod_button = qwidgets.QPushButton("Install Mods...")
         install_mod_button.clicked.connect(lambda *_: autoupdate(on_install_mod, mod_manager, populate_modlist))
 

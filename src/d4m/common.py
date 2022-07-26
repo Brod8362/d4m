@@ -1,5 +1,7 @@
+import functools
 import packaging.version
 import pkg_resources
+import requests
 import vdf
 import os
 import toml
@@ -44,3 +46,13 @@ def get_modloader_info(megamix_path: str):
         enabled = config["enabled"]
         mods_folder = os.path.join(megamix_path, config.get("mods", "mods"))
         return dml_version, enabled, mods_folder
+
+@functools.lru_cache(maxsize=None)
+def fetch_latest_d4m_version():
+    resp = requests.get(
+        f"https://api.github.com/repos/Brod8362/d4m/releases/latest"
+    )
+    if resp.status_code != 200:
+        raise RuntimeError(f"Github API returned {resp.status_code}")
+    j = resp.json()
+    return (packaging.version.Version(j["name"]), j["assets"][0]["browser_download_url"]) #TODO: don't make assumption about assets?
