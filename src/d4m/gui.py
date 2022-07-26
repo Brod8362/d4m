@@ -4,7 +4,7 @@ from PySide6.QtGui import QColor
 import PySide6.QtWidgets as qwidgets
 import PySide6.QtConcurrent
 import PySide6.QtCore 
-from PySide6.QtGui import QImage, QDesktopServices
+from PySide6.QtGui import QImage, QDesktopServices, QAction
 import sys
 
 import d4m.common
@@ -197,6 +197,15 @@ class ModInstallDialog(qwidgets.QDialog):
         self.setMinimumHeight(350)
         self.setWindowTitle("d4m - Install new mods")
         
+def show_about(parent):
+    about_str = f"""
+    d4m v{d4m.common.VERSION}
+
+    Open-source, cross-platform, Project Diva MegaMix+ mod manager
+
+    Written By Brod8362
+    """
+    msgbox = qwidgets.QMessageBox.about(parent, "About d4m", about_str)
 
 class BackgroundUpdateWorker(PySide6.QtCore.QRunnable):
     def __init__(self, mod_manager, populate_func, parent=None, on_complete=None):
@@ -222,7 +231,10 @@ class D4mGUI():
     def __init__(self, qapp: qwidgets.QApplication, mod_manager: ModManager, dml_version):
         threadpool = PySide6.QtCore.QThreadPool()
         window = qwidgets.QWidget()
+    
         main_widget = qwidgets.QVBoxLayout(window)
+
+        menu_bar = qwidgets.QMenuBar()
         top_row = qwidgets.QHBoxLayout()
         mod_table = qwidgets.QTableWidget()
         mod_buttons = qwidgets.QHBoxLayout()
@@ -231,6 +243,29 @@ class D4mGUI():
         ver_str = f"d4m v{d4m.common.VERSION}"
         log_msg(ver_str)
         window.setWindowTitle(ver_str)
+
+        # Populate Menu Bar
+
+        # create menus
+        file_menu = menu_bar.addMenu("&File")
+        help_menu = menu_bar.addMenu("&Help")
+
+        #fill file menu
+
+        #fill help menu
+        action_github = QAction("GitHub", window)
+        action_github.triggered.connect(lambda *_: QDesktopServices.openUrl("https://github.com/Brod8362/d4m"))
+
+        action_bug_report = QAction("File a Bug/Suggest Feature", window)
+        action_bug_report.triggered.connect(lambda *_: QDesktopServices.openUrl("https://github.com/Brod8362/d4m/issues/new/choose"))
+
+        action_about = QAction("About d4m", window)
+        action_about.triggered.connect(lambda *_: show_about(window))
+
+        help_menu.addAction(action_github)
+        help_menu.addAction(action_bug_report)
+        help_menu.addAction(action_about)
+
 
         # Propogate top row
         dml_status_label = qwidgets.QLabel(f"DivaModLoader {dml_version}")
@@ -341,6 +376,7 @@ class D4mGUI():
         threadpool.start(buw)
 
         # # Populate main GUI
+        main_widget.addWidget(menu_bar)
         main_widget.addLayout(top_row)
         main_widget.addWidget(mod_table)
         main_widget.addLayout(mod_buttons)
