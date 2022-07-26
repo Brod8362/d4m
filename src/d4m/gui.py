@@ -411,6 +411,13 @@ class D4mGUI():
 
 def main():
     app = qwidgets.QApplication([])
+
+    try: #libarchive check
+        import libarchive.public
+    except:
+        show_d4m_infobox(f"libarchive is not installed/cannot import.\n{format_exc()}", level="question")
+        sys.exit(0)
+
     try:
         megamix_path = d4m.common.get_megamix_path()
     except:
@@ -418,43 +425,29 @@ def main():
         show_d4m_infobox(content, level="error")
         sys.exit(1)
     if not d4m.common.modloader_is_installed(megamix_path):
-        if d4m.common.can_autoupdate_dml():
-            content = f"DivaModLoader is not installed. Would you like d4m to install the latest version of DivaModLoader?"
-            res = show_d4m_infobox(content, buttons=qwidgets.QMessageBox.Yes | qwidgets.QMessageBox.No, level="question")
-            if res == qwidgets.QMessageBox.StandardButton.Yes:
-                try:
-                    d4m.manage.install_modloader(megamix_path)
-                    show_d4m_infobox("DivaModLoader installed successfully.")
-                except:
-                    show_d4m_infobox(f"Failed to install DivaModLoader:\n {format_exc()}", level="error")
-                    sys.exit(0)
-        else:
-            content = f"DivaModLoader is not installed, and your platform does not support automatic installs. Please manually install DivaModLoader."
-            res = show_d4m_infobox(content, level = "error", buttons = qwidgets.QMessageBox.Ok | qwidgets.QMessageBox.Open)
-            if res == qwidgets.QMessageBox.StandardButton.Open:
-                _, dml_download = d4m.manage.check_modloader_version()
-                QDesktopServices.openUrl(dml_download)
-            sys.exit(0)
-    
+        content = f"DivaModLoader is not installed. Would you like d4m to install the latest version of DivaModLoader?"
+        res = show_d4m_infobox(content, buttons=qwidgets.QMessageBox.Yes | qwidgets.QMessageBox.No, level="question")
+        if res == qwidgets.QMessageBox.StandardButton.Yes:
+            try:
+                d4m.manage.install_modloader(megamix_path)
+                show_d4m_infobox("DivaModLoader installed successfully.")
+            except:
+                show_d4m_infobox(f"Failed to install DivaModLoader:\n {format_exc()}", level="error")
+                sys.exit(0)
     dml_version, dml_enabled, dml_mods_dir = d4m.common.get_modloader_info(megamix_path)
     try:
         dml_latest, dml_download = d4m.manage.check_modloader_version()
         if dml_version < dml_latest:
-            if d4m.common.can_autoupdate_dml():
-                content = f"A new version of DivaModLoader is available.\nCurrent: {dml_version}\nLatest: {dml_latest}\nDo you want to update?"
-                res = show_d4m_infobox(content, level="question", buttons = qwidgets.QMessageBox.Yes | qwidgets.QMessageBox.No)
-                if res == qwidgets.QMessageBox.StandardButton.Yes:
-                    try:
-                        d4m.manage.install_modloader(megamix_path)
-                        show_d4m_infobox(f'DivaModLoader updated successfully.')
-                        dml_version = dml_latest
-                    except:
-                        show_d4m_infobox(f"Failed to update DivaModLoader:\n{format_exc()}", level="error")
-                        sys.exit(0)
-            else:
-                content = f"A new version of DivaModLoader is available, but your platform does not support automatic installs."
-                show_d4m_infobox(content)
-                
+            content = f"A new version of DivaModLoader is available.\nCurrent: {dml_version}\nLatest: {dml_latest}\nDo you want to update?"
+            res = show_d4m_infobox(content, level="question", buttons = qwidgets.QMessageBox.Yes | qwidgets.QMessageBox.No)
+            if res == qwidgets.QMessageBox.StandardButton.Yes:
+                try:
+                    d4m.manage.install_modloader(megamix_path)
+                    show_d4m_infobox(f'DivaModLoader updated successfully.')
+                    dml_version = dml_latest
+                except:
+                    show_d4m_infobox(f"Failed to update DivaModLoader:\n{format_exc()}", level="error")
+                    sys.exit(0)       
     except:
         content = f"Cannot fetch latest DivaModLoader version: {format_exc()}"
         show_d4m_infobox(content, level = "warn")
