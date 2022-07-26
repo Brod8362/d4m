@@ -63,7 +63,22 @@ class ModManager():
             if resp.status_code == 200:
                 with open(os.path.join(mod.path, "preview.png"), "wb") as preview_fd:
                     preview_fd.write(resp.content)
-                    
+
+    def install_from_archive(self, archive_path: str):
+        with open(archive_path, "rb") as arch_fd:
+            with tempfile.TemporaryDirectory(suffix = "d4m") as tempdir:
+                api.extract_archive(arch_fd.read(), tempdir)
+                extracted = os.listdir(tempdir)
+                if "config.toml" in extracted:
+                    mod_folder = os.path.basename(archive_path)
+                    shutil.move(tempdir, os.path.join(self.mods_path, mod_folder))
+                elif len(extracted) == 1:
+                    mod_folder = os.path.join(self.mods_path, extracted[0])
+                    shutil.move(os.path.join(tempdir, extracted[0]), mod_folder)
+                else:
+                    raise RuntimeError("failed to install mod from archive: archive format unusable")
+                new_mod = diva_mod_create(mod_folder)
+                self.mods.append(new_mod)
 
     def install_mod(self, mod_id: int, fetch_thumbnail=False): #mod_id and hash are used for modinfo.toml
         data = api.fetch_mod_data(mod_id)

@@ -59,6 +59,7 @@ def multi_fetch_mod_data(mod_ids: "list[int]") -> "list[dict]":
                     "id": mod_id,
                     "hash": "err",
                     "image": "err",
+                    "download": "err",
                     "download_count": "err",
                     "like_count": "err",
                     "error": format_exc()
@@ -94,26 +95,34 @@ def search_mods(query: str) -> "list[dict]":
         return (mod_id, f"{ers['_sName']} by {ers['_aSubmitter']['_sName']}")
     return list(map(map_name, j))
 
-def download_and_extract_mod(download_url: str, destination: str):
-    resp = requests.get(download_url)
+def download_mod(mod_id: int = None, download_path: str = None) -> bytes:
+    effective_download = download_path
+    if mod_id != None:
+        modinfo = fetch_mod_data(mod_id)
+        effective_download = modinfo["download"]
+    if not effective_download:
+        raise ValueError("Failed to download mod: invalid args")
+    resp = requests.get(effective_download)
     if resp.status_code != 200:
         raise RuntimeError(f"File download returned {resp.status_code}")
+    return resp.content
 
-    file_content = BytesIO(resp.content)
+def extract_archive(archive: bytes, extract_to: str) -> None:
+    file_content = BytesIO(archive)
     mime_type = jank_magic(file_content.read(64))
     file_content.seek(0)
     try:
         if mime_type == "application/x-7z-compressed":
             archive = py7zr.SevenZipFile(file_content)
-            archive.extractall(destination)
+            archive.extractall(extract_to)
             archive.close()
         elif mime_type == "application/zip":
             archive = ZipFile(file_content)
-            archive.extractall(destination)
+            archive.extractall(extract_to)
             archive.close()
         elif mime_type == "application/x-rar":
             archive = RarFile(file_content)
-            archive.extractall(destination)
+            archive.extractall(extract_to)
             archive.close()
         else:
             raise RuntimeError("Unsupported mod archive format (must be 7z, zip, or rar)")
@@ -123,4 +132,7 @@ def download_and_extract_mod(download_url: str, destination: str):
         else:
             raise RuntimeError("Archive corrupted or otherwise unreadable") #TODO: there's probably a better exception for this
 
-    
+
+def download_and_extract_mod(download_url: str, destination: str):
+    content = download_mod(download_path = download_url)
+    extract_archive(content, destination)

@@ -196,7 +196,21 @@ class ModInstallDialog(qwidgets.QDialog):
         self.setMinimumWidth(550)
         self.setMinimumHeight(350)
         self.setWindowTitle("d4m - Install new mods")
-        
+
+def install_from_archive(selected, mod_manager: ModManager):
+    dialog = qwidgets.QFileDialog()
+    if dialog.exec():
+        file_names = dialog.selectedFiles()
+        if len(file_names) > 1:
+            show_d4m_infobox("Only one mod can be installed at a time.")
+        else:
+            file = file_names[0]
+            try:
+                mod_manager.install_from_archive(file)
+                show_d4m_infobox("Mod installed successfully.")
+            except:
+                show_d4m_infobox(f"Failed to install from archive:\n{format_exc()}", level="error")
+
 def show_about(parent):
     about_str = f"""
     d4m v{d4m.common.VERSION}
@@ -205,7 +219,7 @@ def show_about(parent):
 
     Written By Brod8362
     """
-    msgbox = qwidgets.QMessageBox.about(parent, "About d4m", about_str)
+    qwidgets.QMessageBox.about(parent, "About d4m", about_str)
 
 class BackgroundUpdateWorker(PySide6.QtCore.QRunnable):
     def __init__(self, mod_manager, populate_func, parent=None, on_complete=None):
@@ -249,8 +263,6 @@ class D4mGUI():
         # create menus
         file_menu = menu_bar.addMenu("&File")
         help_menu = menu_bar.addMenu("&Help")
-
-        #fill file menu
 
         #fill help menu
         action_github = QAction("GitHub", window)
@@ -348,6 +360,17 @@ class D4mGUI():
             selected_mods = list(map(lambda i: mod_manager.mods[i], selected_rows))
             func(selected_mods, *args)
             populate_modlist(update_check=buw.updates_ready)
+
+        #fill file menu (needs access to autoupdate)
+        action_load_from = QAction("Load from archive...", window)
+        action_load_from.triggered.connect(lambda *_: autoupdate(install_from_archive, mod_manager))
+
+        action_quit = QAction("Exit", window)
+        action_quit.triggered.connect(lambda *_: sys.exit(0))
+
+        file_menu.addAction(action_load_from)
+        file_menu.addAction(action_quit)
+
 
         # Propogate action buttons
         install_mod_button = qwidgets.QPushButton("Install Mods...")
