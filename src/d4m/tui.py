@@ -5,11 +5,12 @@ import sys
 
 import colorama
 from simple_term_menu import TerminalMenu
+import subprocess
 
 import d4m.api as api
 from d4m.common import (VERSION, can_autoupdate_dml, get_megamix_path,
                         get_modloader_info, get_vdf_path,
-                        modloader_is_installed)
+                        modloader_is_installed, MEGAMIX_APPID)
 from d4m.manage import ModManager, check_modloader_version, install_modloader
 
 
@@ -171,6 +172,7 @@ def main():
     base_options = [
         ("Install new mods", menu_install),
         ("Manage existing mods", menu_manage),
+        ("Run Project Diva", lambda *_: os.system(f"xdg-open steam://run/{MEGAMIX_APPID}"))
     ]
 
     while True:
