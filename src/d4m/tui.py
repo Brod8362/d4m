@@ -71,11 +71,13 @@ def menu_manage(mod_manager: ModManager):
     if 0 < choice < len(options):
         selected_mod = mod_manager.mods[choice-1]
         mod_is_enabled = mod_manager.is_enabled(selected_mod)
+        editor = os.environ.get("EDITOR", "nano")
         inner_options = [
             "Cancel",
             "[d] Disable" if mod_is_enabled else "[e] Enable",
             "(update unavailable)" if selected_mod.is_simple() else "[u] Update",
             "[x] Delete",
+            f"[e] Edit mod config... ({editor})"
         ]
         inner_menu = TerminalMenu(inner_options, title=str(selected_mod))
         inner_choice = inner_menu.show()
@@ -86,7 +88,7 @@ def menu_manage(mod_manager: ModManager):
             else:
                 mod_manager.enable(selected_mod)
                 print(f"{selected_mod} {colorama.Fore.GREEN}enabled.{colorama.Fore.RESET}")
-        if inner_choice == 2: 
+        elif inner_choice == 2: 
             if selected_mod.is_simple():
                 print("This mod has an unknown origin and thus cannot be auto-updated. Try deleting it and reinstalling it using d4m.")
             else:
@@ -95,11 +97,13 @@ def menu_manage(mod_manager: ModManager):
                     mod_manager.install_mod(selected_mod.id)
                 else:
                     print(f"{selected_mod.name} is up-to-date.")
-        if inner_choice == 3:
+        elif inner_choice == 3:
             check_opt = TerminalMenu(["Cancel", f"Yes, delete {selected_mod.name}"], title=f"Are you sure you want to delete {selected_mod}?").show()
             if check_opt == 1:
                 mod_manager.delete_mod(selected_mod)
                 print(f"{colorama.Fore.RED}{selected_mod} deleted.{colorama.Fore.RESET}")
+        elif inner_choice == 4:
+            subprocess.run([editor, os.path.join(selected_mod.path, "config.toml")])
 
 def do_update_all(mod_manager: ModManager):
     for mod in mod_manager.mods:
