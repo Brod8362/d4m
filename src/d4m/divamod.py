@@ -22,6 +22,7 @@ class DivaSimpleMod():
                 self.name = data.get("name", os.path.basename(path))
                 self.author = data.get("author", "unknown author")
                 self.enabled = data["enabled"]
+        self.size_bytes = sum( os.path.getsize(os.path.join(dirpath,filename)) for dirpath, _, filenames in os.walk( path ) for filename in filenames )
 
     def __str__(self):
         return f'{self.name} ({self.version}) by {self.author}'
