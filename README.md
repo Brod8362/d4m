@@ -62,7 +62,7 @@ Linux/Windows (via pip)
 
 You can place an alias in your shell config, e.g `~/.bashrc` or `~/.zshrc`
 
-> `alias d4m=python -m d4m`
+> `alias d4m='python -m d4m'`
 
 Demo (TUI)
 -------
