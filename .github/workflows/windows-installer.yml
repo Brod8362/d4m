@@ -26,7 +26,7 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install .
     - name: Install NSIS
-      uses: |
+      run: |
         Invoke-Expression (New-Object System.Net.WebClient).DownloadString('https://get.scoop.sh')
         scoop bucket add extras
         scoop install nsis
