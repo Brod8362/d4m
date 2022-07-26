@@ -14,7 +14,9 @@ Features
 - Install and update DivaModLoader
 - Easily enable/disable mods
 - Search and Install mods from [GameBanana](https://gamebanana.com/games/16522)
+- Install mods from a local archive (.7z,.rar,.zip, etc)
 - Update installed mods easily
+- TUI or GUI: your choice! (TUI is Linux only)
 
 Installation
 ============
@@ -25,13 +27,9 @@ Requirements: `python >= 3.8`, `libarchive` (optional)
 
 `python -m pip install d4m` (currently not available just yet)
 
-IMPORTANT: If your system supports `libarchive` (aka, Linux, or Windows users who went out of their way to install it)
-
-**Make sure to do `python -m pip install libarchive` too!**
-
 ### For Windows (Bundled)
 
-Download the latest d4m executable from the [releases page.](https://github.com/Brod8362/d4m/releases)
+Download the latest d4m installer from the [releases page.](https://github.com/Brod8362/d4m/releases)
 
 ### From Source
 
@@ -47,6 +45,7 @@ python -m pip install dist/*.whl
 ```
 git clone https://github.com/Brod8362/d4m
 cd d4m
+git checkout unstable
 python -m pip install build
 python -m pip install -e .
 ```
@@ -78,6 +77,8 @@ FAQ
 ===
 
 - Why is DivaModLoader installation not supported on my platform?
+
+> As of d4m 0.3.0, `libarchive` should be bundled with all Windows installations.
 
 Currently, automatic DivaModLoader installation/updating depends on `libarchive`. Most Windows users likely don't have this installed, and I don't want to make it a hard dependency of the application.
 
