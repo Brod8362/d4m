@@ -25,7 +25,7 @@ Requirements: `python >= 3.8`, `libarchive` (optional)
 
 ### From PyPi
 
-`python -m pip install d4m` (currently not available just yet)
+`python -m pip install d4m`
 
 ### For Windows (Bundled)
 
