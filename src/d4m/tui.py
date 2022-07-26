@@ -4,13 +4,15 @@ import time
 import sys
 
 import colorama
+import packaging
 from simple_term_menu import TerminalMenu
 import subprocess
 
 import d4m.api as api
 from d4m.common import (VERSION, get_megamix_path,
                         get_modloader_info, 
-                        modloader_is_installed, MEGAMIX_APPID)
+                        modloader_is_installed, MEGAMIX_APPID, 
+                        fetch_latest_d4m_version)
 from d4m.manage import ModManager, check_modloader_version, install_modloader
 
 
@@ -117,6 +119,10 @@ def do_update_all(mod_manager: ModManager):
 
 def main():
     print(f"d4m v{VERSION}")
+
+    d4m_latest, _ = fetch_latest_d4m_version()
+    if d4m_latest > packaging.version.Version(VERSION):
+        print(f"{colorama.Fore.YELLOW}A new version of d4m is available. Please update via\n\tpip install d4m=={d4m_latest}{colorama.Fore.RESET}")
 
     megamix_path = os.environ.get("D4M_INSTALL_DIR", get_megamix_path())
 
