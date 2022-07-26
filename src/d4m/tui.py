@@ -8,8 +8,8 @@ from simple_term_menu import TerminalMenu
 import subprocess
 
 import d4m.api as api
-from d4m.common import (VERSION, can_autoupdate_dml, get_megamix_path,
-                        get_modloader_info, get_vdf_path,
+from d4m.common import (VERSION, get_megamix_path,
+                        get_modloader_info, 
                         modloader_is_installed, MEGAMIX_APPID)
 from d4m.manage import ModManager, check_modloader_version, install_modloader
 
@@ -140,18 +140,17 @@ def main():
 
     dml_latest, dml_url = check_modloader_version()
     if dml_latest > dml_version:
-        if can_autoupdate_dml():
-            print(f"DivaModLoader update available. Latest version is {dml_latest}, you're running {dml_version}. Would you like to update?")
-            menu = TerminalMenu(["Yes", "No"])
-            choice = menu.show()
-            if choice == 0:
-                print("Updating DivaModLoader...")
-                try:
-                    install_modloader(megamix_path)
-                    print(f"Updated to DivaModLoader {dml_latest}")
-                except Exception as e:
-                    print(f'Failed to update DivaModLoader. ({e})')
-                    sys.exit(2)
+        print(f"DivaModLoader update available. Latest version is {dml_latest}, you're running {dml_version}. Would you like to update?")
+        menu = TerminalMenu(["Yes", "No"])
+        choice = menu.show()
+        if choice == 0:
+            print("Updating DivaModLoader...")
+            try:
+                install_modloader(megamix_path)
+                print(f"Updated to DivaModLoader {dml_latest}")
+            except Exception as e:
+                print(f'Failed to update DivaModLoader. ({e})')
+                sys.exit(2)
         else:
             print(f"DivaModLoader update available, but auto-updating is not supported on this platform. Download it here: {dml_url}")
 
