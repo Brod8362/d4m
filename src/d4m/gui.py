@@ -156,6 +156,7 @@ class ModInstallDialog(qwidgets.QDialog):
             self.found_mod_list.clear()
             self.found_mod_list.setColumnCount(5)
             self.found_mod_list.setHorizontalHeaderLabels(["Mod", "Mod ID", "Likes", "Downloads", "Status",])
+            self.found_mod_list.setEditTriggers(qwidgets.QAbstractItemView.NoEditTriggers)
             self.found_mod_list.setSelectionBehavior(qwidgets.QAbstractItemView.SelectionBehavior.SelectRows)
             self.found_mod_list.horizontalHeader().setStretchLastSection(True)
             self.found_mod_list.setRowCount(len(results))
@@ -304,6 +305,7 @@ class D4mGUI():
         def populate_modlist(update_check=True):
             mod_table.clear()
             mod_table.setSelectionBehavior(qwidgets.QAbstractItemView.SelectionBehavior.SelectRows)
+            mod_table.setEditTriggers(qwidgets.QAbstractItemView.NoEditTriggers)
             mod_table.setHorizontalHeaderLabels(["Thumbnail", "Mod Name", "Enabled", "Mod Author(s)", "Mod Version", "Gamebanana ID", "Size"])
             mod_table.horizontalHeader().setSectionResizeMode(0, qwidgets.QHeaderView.ResizeMode.ResizeToContents)
             mod_table.horizontalHeader().setSectionResizeMode(1, qwidgets.QHeaderView.ResizeMode.ResizeToContents)
