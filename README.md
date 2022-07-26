@@ -19,9 +19,15 @@ Features
 Installation
 ============
 
+Requirements: `python >= 3.8`, `libarchive` (optional)
+
 ### From PyPi
 
 `python -m pip install d4m` (currently not available just yet)
+
+IMPORTANT: If your system supports `libarchive` (aka, Linux, or Windows users who went out of their way to install it)
+
+**Make sure to do `python -m pip install libarchive` too!**
 
 ### For Windows (Bundled)
 
