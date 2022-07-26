@@ -1,10 +1,8 @@
 from io import BytesIO
 from traceback import format_exc
 import requests
-from zipfile import ZipFile
-import py7zr
-from rarfile import RarFile
-from d4m.util import jank_magic
+import libarchive.public
+import os
 
 BASE_DOMAIN = "https://api.gamebanana.com"
 GET_DATA_ENDPOINT = "/Core/Item/Data"
@@ -108,29 +106,21 @@ def download_mod(mod_id: int = None, download_path: str = None) -> bytes:
     return resp.content
 
 def extract_archive(archive: bytes, extract_to: str) -> None:
-    file_content = BytesIO(archive)
-    mime_type = jank_magic(file_content.read(64))
-    file_content.seek(0)
     try:
-        if mime_type == "application/x-7z-compressed":
-            archive = py7zr.SevenZipFile(file_content)
-            archive.extractall(extract_to)
-            archive.close()
-        elif mime_type == "application/zip":
-            archive = ZipFile(file_content)
-            archive.extractall(extract_to)
-            archive.close()
-        elif mime_type == "application/x-rar":
-            archive = RarFile(file_content)
-            archive.extractall(extract_to)
-            archive.close()
-        else:
-            raise RuntimeError("Unsupported mod archive format (must be 7z, zip, or rar)")
+        with libarchive.public.memory_reader(archive) as la:
+            for entry in la:
+                if entry.filetype.IFDIR:
+                    os.makedirs(os.path.join(extract_to, entry.pathname), exist_ok=True)
+                else:
+                    with open(os.path.join(extract_to, entry.pathname), "wb") as fd:
+                        for block in entry.get_blocks():
+                            fd.write(block)
+                    
     except Exception as e:
         if isinstance(e, RuntimeError):
             raise(e)
         else:
-            raise RuntimeError("Archive corrupted or otherwise unreadable") #TODO: there's probably a better exception for this
+            raise RuntimeError(f"libarchive error {e}") #TODO: there's probably a better exception for this
 
 
 def download_and_extract_mod(download_url: str, destination: str):

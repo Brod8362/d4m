@@ -44,12 +44,3 @@ def get_modloader_info(megamix_path: str):
         enabled = config["enabled"]
         mods_folder = os.path.join(megamix_path, config.get("mods", "mods"))
         return dml_version, enabled, mods_folder
-
-def can_autoupdate_dml():
-    try:
-        #DML archives use BCJ2. This is not supported by py7zr, so we need to rely on libarchive.
-        #libarchive may not be installed on all systems.
-        import libarchive.public 
-        return True 
-    except:
-        return False
