@@ -1,4 +1,5 @@
 from io import BytesIO
+from traceback import format_exc
 import requests
 from zipfile import ZipFile
 import py7zr
@@ -29,7 +30,7 @@ def multi_fetch_mod_data(mod_ids: "list[int]") -> "list[dict]":
         for (index, mod_id) in enumerate(need_fetch):
             params.update({
                 f"itemid[{index}]": mod_id,
-                f"fields[{index}]": "Files().aFiles(),Preview().sStructuredDataFullsizeUrl()",
+                f"fields[{index}]": "Files().aFiles(),Preview().sStructuredDataFullsizeUrl(),likes,downloads",
                 f"itemtype[{index}]": "Mod"
             })
         resp = requests.get(BASE_DOMAIN+GET_DATA_ENDPOINT,
@@ -40,17 +41,30 @@ def multi_fetch_mod_data(mod_ids: "list[int]") -> "list[dict]":
             raise RuntimeError(f"Gamebanana API returned {resp.status_code}")
 
         for (index, elem) in enumerate(resp.json()):
-            mod_id = need_fetch[index]
-            files = sorted(elem[0].values(), key = lambda x: x["_tsDateAdded"], reverse=True)
-            obj = {
-                "id": mod_id,
-                "hash": files[0]["_sMd5Checksum"],
-                "image": elem[1],
-                "download": files[0]["_sDownloadUrl"]
-            }
-            mod_info_cache[mod_id] = obj
-            mod_data.append(obj)
-
+            try:
+                mod_id = need_fetch[index]
+                files = sorted(elem[0].values(), key = lambda x: x["_tsDateAdded"], reverse=True)
+                obj = {
+                    "id": mod_id,
+                    "hash": files[0]["_sMd5Checksum"],
+                    "image": elem[1],
+                    "download": files[0]["_sDownloadUrl"],
+                    "download_count": elem[2],
+                    "like_count": elem[3]
+                }
+                mod_info_cache[mod_id] = obj
+                mod_data.append(obj)
+            except:
+                obj = {
+                    "id": mod_id,
+                    "hash": "err",
+                    "image": "err",
+                    "download_count": "err",
+                    "like_count": "err",
+                    "error": format_exc()
+                }
+                mod_info_cache[mod_id] = obj
+                mod_data.append(obj)
     return mod_data
         
 

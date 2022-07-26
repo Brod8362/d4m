@@ -127,27 +127,40 @@ class ModInstallDialog(qwidgets.QDialog):
 
         def populate_search_results():
             try:
-                self.progress_bar.setRange(0,1)
-                self.progress_bar.setValue(0)
+                self.progress_bar.setRange(0,3)
+                self.progress_bar.setValue(1)
                 results = d4m.api.search_mods(self.mod_name_input.text())
+                self.progress_bar.setValue(2)
+                d4m.api.multi_fetch_mod_data(t[0] for t in results) #fetch detailed info
             except RuntimeError as e:
                 self.status_label.setText(f"Err: <strong color=red>{e}</strong>")
                 return
             finally:
-                self.progress_bar.setValue(1)
+                self.progress_bar.setValue(3)
             self.status_label.setText(f"Found <strong>{len(results)}</strong> mods matching <em>{self.mod_name_input.text()}</em>")
             self.found_mod_list.clear()
-            self.found_mod_list.setColumnCount(3)
-            self.found_mod_list.setHorizontalHeaderLabels(["Mod", "Mod ID", "Status"])
+            self.found_mod_list.setColumnCount(5)
+            self.found_mod_list.setHorizontalHeaderLabels(["Mod", "Mod ID", "Likes", "Downloads", "Status",])
             self.found_mod_list.setSelectionBehavior(qwidgets.QAbstractItemView.SelectionBehavior.SelectRows)
+            self.found_mod_list.horizontalHeader().setStretchLastSection(True)
             self.found_mod_list.setRowCount(len(results))
             for index, (m_id, m_name) in enumerate(results):
+                detailed_mod_info = d4m.api.fetch_mod_data(m_id) #should already be fetched and cached, no performance concerns here
                 mod_label = qwidgets.QTableWidgetItem(m_name)
                 mod_id_label = qwidgets.QTableWidgetItem(str(m_id))
-                mod_installed_label = qwidgets.QTableWidgetItem("Installed" if mod_manager.mod_is_installed(m_id) else "")
+                status = "Available"
+                if mod_manager.mod_is_installed(m_id):
+                    status = "Installed"
+                if detailed_mod_info["hash"] == "err":
+                    status = "Unavailable (Error)"
+                mod_installed_label = qwidgets.QTableWidgetItem(status)
+                mod_downloads_label = qwidgets.QTableWidgetItem(str(detailed_mod_info["download_count"]))
+                mod_likes_label = qwidgets.QTableWidgetItem(str(detailed_mod_info["like_count"]))
                 self.found_mod_list.setItem(index, 0, mod_label)
                 self.found_mod_list.setItem(index, 1, mod_id_label)
-                self.found_mod_list.setItem(index, 2, mod_installed_label)
+                self.found_mod_list.setItem(index, 2, mod_downloads_label)
+                self.found_mod_list.setItem(index, 3, mod_likes_label)
+                self.found_mod_list.setItem(index, 4, mod_installed_label)
             if len(results) > 0:
                 self.install_button.setEnabled(True)
                 self.install_button.clicked.connect(lambda *_: on_install_click(results))
@@ -165,6 +178,8 @@ class ModInstallDialog(qwidgets.QDialog):
         self.win_layout.addWidget(self.install_button)
 
         self.setLayout(self.win_layout)
+        self.setMinimumWidth(550)
+        self.setMinimumHeight(350)
         self.setWindowTitle("d4m - Install new mods")
         
 
@@ -313,6 +328,8 @@ class D4mGUI():
         main_widget.addWidget(mod_table)
         main_widget.addLayout(mod_buttons)
         main_widget.addWidget(statusbar)
+        window.setMinimumSize(750, 500)
+        window.setMaximumSize(850, 1500)
         window.show()
         sys.exit(qapp.exec())
 
