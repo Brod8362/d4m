@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="1280"
+   height="128"
+   viewBox="0 0 338.66666 33.866666"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.2.1 (9c6d41e410, 2022-07-14)"
+   sodipodi:docname="tagline.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#505050"
+     bordercolor="#eeeeee"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#505050"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="0.67358087"
+     inkscape:cx="535.19928"
+     inkscape:cy="253.86707"
+     inkscape:window-width="1920"
+     inkscape:window-height="1040"
+     inkscape:window-x="0"
+     inkscape:window-y="19"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs2">
+    <linearGradient
+       inkscape:collect="always"
+       id="linearGradient1647">
+      <stop
+         style="stop-color:#2ab7ff;stop-opacity:1;"
+         offset="0"
+         id="stop1643" />
+      <stop
+         style="stop-color:#cbf100;stop-opacity:1;"
+         offset="1"
+         id="stop1645" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient1647"
+       id="linearGradient1649"
+       x1="9.0411577"
+       y1="5.7798748"
+       x2="57.655407"
+       y2="5.6308804"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(0.85671293,0,0,0.85671293,12.740499,7.4637239)" />
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <text
+       xml:space="preserve"
+       style="font-size:16.9333px;font-family:'Font Awesome 6 Brands';-inkscape-font-specification:'Font Awesome 6 Brands';letter-spacing:-1.85978px;fill:#00ffff;fill-opacity:1;stroke:#280b0b;stroke-width:0.226671"
+       x="3.6734672"
+       y="23.238394"
+       id="text1466"
+       transform="rotate(0.1756011)"><tspan
+         sodipodi:role="line"
+         id="tspan1464"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:16.9333px;font-family:'Source Code Variable';-inkscape-font-specification:'Source Code Variable';baseline-shift:baseline;fill:#00ffff;fill-opacity:1;stroke-width:0.226671"
+         x="3.6734672"
+         y="23.238394">- a Project Diva MegaMix+ Mod Manager</tspan></text>
+  </g>
+</svg>
