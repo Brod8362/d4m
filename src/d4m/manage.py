@@ -145,7 +145,7 @@ def install_modloader(diva_path: str):
                             fd.write(block)
     
 
-@functools.cache
+@functools.lru_cache(maxsize=None)
 def check_modloader_version() -> "tuple[packaging.version.Version,str]": 
     resp = requests.get(
         f"https://api.github.com/repos/blueskythlikesclouds/DivaModLoader/releases/latest"
