@@ -21,9 +21,19 @@ Features
 Installation
 ============
 
-Requirements: `python >= 3.8`, `libarchive` (optional)
+Requirements: `python >= 3.8`, `libarchive`
 
-### From PyPi
+### Linux
+
+Before installing `d4m`, you first need to install libarchive.
+
+For Ubuntu, this can be installed with
+
+`sudo apt install libarchive-dev`
+
+For Arch Linux (e.g Steam Deck), libarchive should already be installed.
+
+After installing libarchive, install `d4m` via pip:
 
 `python -m pip install d4m`
 
@@ -32,6 +42,8 @@ Requirements: `python >= 3.8`, `libarchive` (optional)
 Download the latest d4m installer from the [releases page.](https://github.com/Brod8362/d4m/releases)
 
 ### From Source
+
+*Note: libarchive must be installed 
 
 ```
 git clone https://github.com/Brod8362/d4m
@@ -42,6 +54,9 @@ python -m pip install dist/*.whl
 ```
 
 ### From Source (Development)
+
+*Note: libarchive must be installed
+
 ```
 git clone https://github.com/Brod8362/d4m
 cd d4m
@@ -77,6 +92,8 @@ FAQ
 ===
 
 - Why is DivaModLoader installation not supported on my platform?
+
+> As of d4m 0.3.1, `libarchive` is *required* for installations on all platforms.
 
 > As of d4m 0.3.0, `libarchive` should be bundled with all Windows installations.
 
