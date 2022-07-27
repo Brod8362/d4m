@@ -1,5 +1,7 @@
 #!/usr/bin/env python
-from re import L
+import os
+import subprocess
+from sys import platform
 from time import strftime
 from traceback import format_exc, print_exc
 from PySide6.QtGui import QColor
@@ -94,6 +96,22 @@ def on_delete_mod(selections, mod_manager: ModManager):
             except Exception as e:
                 log_msg(f"Failed to delete {mod.name}: {e}")
         log_msg(f"Deleted {success} mods")
+
+def on_edit_mod(selections, mod_manager: ModManager):
+    if len(selections) == 0:
+        show_d4m_infobox("Select a mod to edit.", level="warn")
+    elif len(selections) > 1:
+        show_d4m_infobox("You can only edit one mod's config at a time.", level="warn")
+    else:
+        mod = selections[0]
+        config_file_path =  os.path.join(mod.path, "config.toml")
+        if platform == "win32":
+            os.startfile(config_file_path)
+        elif platform == "linux":
+            editor = os.environ.get("VISUAL", "gedit")
+            subprocess.Popen([editor, config_file_path])
+        else:
+            show_d4m_infobox(f"Unable to do that on your platform ({platform})", level="error")
 
 def on_refresh_click(selections, mod_manager: ModManager):
     mod_manager.reload()
@@ -365,7 +383,11 @@ class D4mGUI():
             mod_table.clear()
             mod_table.setSelectionBehavior(qwidgets.QAbstractItemView.SelectionBehavior.SelectRows)
             mod_table.setEditTriggers(qwidgets.QAbstractItemView.NoEditTriggers)
-            mod_table.setHorizontalHeaderLabels(["Thumbnail", "Mod Name", "Enabled", "Mod Author(s)", "Mod Version", "Gamebanana ID", "Size"])
+            mod_table.setHorizontalHeaderLabels(
+                ["Thumbnail", "Mod Name", "Enabled", 
+                "Mod Author(s)", "Mod Version", "Gamebanana ID", 
+                "Size"]
+                )
             mod_table.horizontalHeader().setSectionResizeMode(0, qwidgets.QHeaderView.ResizeMode.ResizeToContents)
             mod_table.horizontalHeader().setSectionResizeMode(1, qwidgets.QHeaderView.ResizeMode.ResizeToContents)
             mod_table.horizontalHeader().setStretchLastSection(True)
@@ -449,6 +471,19 @@ class D4mGUI():
         delete_mod_button = qwidgets.QPushButton("Delete Selected")
         delete_mod_button.clicked.connect(lambda *_: autoupdate(on_delete_mod, mod_manager))
 
+        edit_mod_config_button = qwidgets.QPushButton("Edit Config...")
+        edit_mod_config_button.setEnabled(False)
+        edit_mod_config_button.clicked.connect(lambda *_: autoupdate(on_edit_mod, mod_manager))
+
+        def mod_edit_available():
+            selected_row_count = len(set(map(lambda x: x.row(), mod_table.selectedIndexes())))
+            if selected_row_count == 1:
+                edit_mod_config_button.setEnabled(True)
+            else:
+                edit_mod_config_button.setEnabled(False)
+
+        mod_table.itemSelectionChanged.connect(mod_edit_available)
+        
         refresh_mod_button = qwidgets.QPushButton("Refresh")
         refresh_mod_button.clicked.connect(lambda *_: autoupdate(on_refresh_click, mod_manager))
 
@@ -456,6 +491,7 @@ class D4mGUI():
         mod_buttons.addWidget(toggle_mod_button)
         mod_buttons.addWidget(update_mod_button)
         mod_buttons.addWidget(delete_mod_button) 
+        mod_buttons.addWidget(edit_mod_config_button) 
         mod_buttons.addWidget(refresh_mod_button)
 
         buw = BackgroundUpdateWorker(mod_manager, populate_modlist, on_complete=lambda *_:update_mod_button.setEnabled(True))
