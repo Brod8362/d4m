@@ -1,2 +1,5 @@
 __pycache__
 dist
+flatpak/.flatpak-builder
+flatpak/build
+src/d4m.egg-info
