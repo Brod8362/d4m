@@ -121,13 +121,16 @@ def do_update_all(mod_manager: ModManager):
 def main():
     print(f"d4m v{VERSION}")
 
-    d4m_latest, _ = fetch_latest_d4m_version()
-    if d4m_latest > packaging.version.Version(VERSION):
-        print(f"{colorama.Fore.YELLOW}A new version of d4m is available. Please update via\n\tpip install d4m=={d4m_latest}{colorama.Fore.RESET}")
-
     d4m_config = D4mConfig()
 
-    megamix_path = os.environ.get("D4M_INSTALL_DIR", get_megamix_path())
+    if time.time() - d4m_config["last_d4m_update_check"] > 60*60:
+        d4m_config["last_d4m_update_check"] = time.time()
+        d4m_config.write()
+        d4m_latest, _ = fetch_latest_d4m_version()
+        if d4m_latest > packaging.version.Version(VERSION):
+            print(f"{colorama.Fore.YELLOW}A new version of d4m is available. Please update via\n\tpip install d4m=={d4m_latest}{colorama.Fore.RESET}")
+
+    megamix_path = os.environ.get("D4M_INSTALL_DIR", d4m_config.get_diva_path())
 
     if not megamix_path or not os.path.exists(megamix_path):
         print("Project Diva MegaMix+ does not appear to be installed.", file=sys.stderr)
@@ -151,21 +154,23 @@ def main():
 
     dml_version, _, mods_path = get_modloader_info(megamix_path)
 
-    dml_latest, dml_url = check_modloader_version()
-    if dml_latest > dml_version:
-        print(f"DivaModLoader update available. Latest version is {dml_latest}, you're running {dml_version}. Would you like to update?")
-        menu = TerminalMenu(["Yes", "No"])
-        choice = menu.show()
-        if choice == 0:
-            print("Updating DivaModLoader...")
-            try:
-                install_modloader(megamix_path)
-                print(f"Updated to DivaModLoader {dml_latest}")
-            except Exception as e:
-                print(f'Failed to update DivaModLoader. ({e})')
-                sys.exit(2)
-        else:
-            print(f"DivaModLoader update available, but auto-updating is not supported on this platform. Download it here: {dml_url}")
+    if time.time() - d4m_config["last_dmm_update_check"] > 60*60:
+        d4m_config["last_dmm_update_check"] = time.time()
+        d4m_config.write()
+        dml_latest, dml_url = check_modloader_version()
+
+        if dml_latest > dml_version:
+            print(f"DivaModLoader update available. Latest version is {dml_latest}, you're running {dml_version}. Would you like to update?")
+            menu = TerminalMenu(["Yes", "No"])
+            choice = menu.show()
+            if choice == 0:
+                print("Updating DivaModLoader...")
+                try:
+                    install_modloader(megamix_path)
+                    print(f"Updated to DivaModLoader {dml_latest}")
+                except Exception as e:
+                    print(f'Failed to update DivaModLoader. ({e})')
+                    sys.exit(2)
 
     os.makedirs(mods_path, exist_ok=True)
     mod_manager = ModManager(megamix_path, mods_path)
