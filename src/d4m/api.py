@@ -1,10 +1,9 @@
-from io import BytesIO
+import os
 from traceback import format_exc
+from traceback import print_exc
+
+import libarchive.public
 import requests
-from zipfile import ZipFile
-import py7zr
-from rarfile import RarFile
-from d4m.util import jank_magic
 
 BASE_DOMAIN = "https://api.gamebanana.com"
 GET_DATA_ENDPOINT = "/Core/Item/Data"
@@ -15,6 +14,7 @@ SEARCH_ENDPOINT = "/apiv9/Util/Game/Submissions"
 DIVA_GAME_ID = 16522
 
 mod_info_cache = {}
+
 
 def multi_fetch_mod_data(mod_ids: "list[int]") -> "list[dict]":
     mod_data = []
@@ -33,17 +33,17 @@ def multi_fetch_mod_data(mod_ids: "list[int]") -> "list[dict]":
                 f"fields[{index}]": "Files().aFiles(),Preview().sStructuredDataFullsizeUrl(),likes,downloads",
                 f"itemtype[{index}]": "Mod"
             })
-        resp = requests.get(BASE_DOMAIN+GET_DATA_ENDPOINT,
-            params = params
-        )
+        resp = requests.get(BASE_DOMAIN + GET_DATA_ENDPOINT,
+                            params=params
+                            )
 
         if resp.status_code != 200:
             raise RuntimeError(f"Gamebanana API returned {resp.status_code}")
 
         for (index, elem) in enumerate(resp.json()):
+            mod_id = need_fetch[index]
             try:
-                mod_id = need_fetch[index]
-                files = sorted(elem[0].values(), key = lambda x: x["_tsDateAdded"], reverse=True)
+                files = sorted(elem[0].values(), key=lambda x: x["_tsDateAdded"], reverse=True)
                 obj = {
                     "id": mod_id,
                     "hash": files[0]["_sMd5Checksum"],
@@ -67,7 +67,7 @@ def multi_fetch_mod_data(mod_ids: "list[int]") -> "list[dict]":
                 mod_info_cache[mod_id] = obj
                 mod_data.append(obj)
     return mod_data
-        
+
 
 def fetch_mod_data(mod_id: int) -> "dict":
     """
@@ -78,9 +78,11 @@ def fetch_mod_data(mod_id: int) -> "dict":
 
     return multi_fetch_mod_data([mod_id])[0]
 
-def search_mods(query: str) -> "list[dict]":
-    resp = requests.get(ALT_API_DOMAIN+SEARCH_ENDPOINT,
-        params = {
+
+def search_mods(query: str) -> "list[tuple[any,any]]":
+    resp = requests.get(
+        ALT_API_DOMAIN + SEARCH_ENDPOINT,
+        params={
             "_idGameRow": DIVA_GAME_ID,
             "_sName": query,
             "_nPerpage": 50
@@ -90,14 +92,17 @@ def search_mods(query: str) -> "list[dict]":
         raise RuntimeError(f"Gamebanana search API returned {resp.status_code}")
 
     j = resp.json()
+
     def map_name(ers):
         mod_id = ers["_idRow"]
-        return (mod_id, f"{ers['_sName']} by {ers['_aSubmitter']['_sName']}")
+        return mod_id, f"{ers['_sName']} by {ers['_aSubmitter']['_sName']}"
+
     return list(map(map_name, j))
+
 
 def download_mod(mod_id: int = None, download_path: str = None) -> bytes:
     effective_download = download_path
-    if mod_id != None:
+    if mod_id is not None:
         modinfo = fetch_mod_data(mod_id)
         effective_download = modinfo["download"]
     if not effective_download:
@@ -107,32 +112,28 @@ def download_mod(mod_id: int = None, download_path: str = None) -> bytes:
         raise RuntimeError(f"File download returned {resp.status_code}")
     return resp.content
 
+
 def extract_archive(archive: bytes, extract_to: str) -> None:
-    file_content = BytesIO(archive)
-    mime_type = jank_magic(file_content.read(64))
-    file_content.seek(0)
     try:
-        if mime_type == "application/x-7z-compressed":
-            archive = py7zr.SevenZipFile(file_content)
-            archive.extractall(extract_to)
-            archive.close()
-        elif mime_type == "application/zip":
-            archive = ZipFile(file_content)
-            archive.extractall(extract_to)
-            archive.close()
-        elif mime_type == "application/x-rar":
-            archive = RarFile(file_content)
-            archive.extractall(extract_to)
-            archive.close()
-        else:
-            raise RuntimeError("Unsupported mod archive format (must be 7z, zip, or rar)")
+        with libarchive.public.memory_reader(archive) as la:
+            for entry in la:
+                if entry.filetype.IFDIR:
+                    os.makedirs(os.path.join(extract_to, entry.pathname), exist_ok=True)
+                else:
+                    dest = os.path.join(extract_to, entry.pathname)
+                    os.makedirs(os.path.dirname(dest), exist_ok=True)
+                    with open(os.path.join(extract_to, entry.pathname), "xb") as fd:
+                        for block in entry.get_blocks():
+                            fd.write(block)
+
     except Exception as e:
         if isinstance(e, RuntimeError):
-            raise(e)
+            raise e
         else:
-            raise RuntimeError("Archive corrupted or otherwise unreadable") #TODO: there's probably a better exception for this
+            print_exc()
+            raise RuntimeError(f"libarchive error {e}")  # TODO: there's probably a better exception for this
 
 
 def download_and_extract_mod(download_url: str, destination: str):
-    content = download_mod(download_path = download_url)
+    content = download_mod(download_path=download_url)
     extract_archive(content, destination)

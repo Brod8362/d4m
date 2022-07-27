@@ -4,8 +4,10 @@ import packaging.version
 import d4m.api as api
 import functools
 
+
 class UnmanageableModError(ValueError):
     pass
+
 
 def diva_mod_create(path: str):
     try:
@@ -13,16 +15,19 @@ def diva_mod_create(path: str):
     except:
         return DivaSimpleMod(path)
 
-class DivaSimpleMod():
+
+class DivaSimpleMod:
     def __init__(self, path: str):
         self.path = path
         with open(os.path.join(path, "config.toml")) as mod_conf_fd:
-                data = toml.load(mod_conf_fd)
-                self.version = None if "version" not in data else packaging.version.Version(data["version"])
-                self.name = data.get("name", os.path.basename(path))
-                self.author = data.get("author", "unknown author")
-                self.enabled = data["enabled"]
-        self.size_bytes = sum( os.path.getsize(os.path.join(dirpath,filename)) for dirpath, _, filenames in os.walk( path ) for filename in filenames )
+            data = toml.load(mod_conf_fd)
+            self.version = None if "version" not in data else packaging.version.Version(data["version"])
+            self.name = data.get("name", os.path.basename(path))
+            self.author = data.get("author", "unknown author")
+            self.enabled = data["enabled"]
+        self.size_bytes = sum(
+            os.path.getsize(os.path.join(dirpath, filename)) for dirpath, _, filenames in os.walk(path) for filename in
+            filenames)
 
     def __str__(self):
         return f'{self.name} ({self.version}) by {self.author}'
@@ -61,6 +66,7 @@ class DivaSimpleMod():
     def is_simple(self):
         return True
 
+
 class DivaMod(DivaSimpleMod):
     def __init__(self, path: str):
         super().__init__(path)
@@ -85,4 +91,3 @@ class DivaMod(DivaSimpleMod):
     @functools.cached_property
     def modinfo(self):
         return api.fetch_mod_data(self.id)
-        

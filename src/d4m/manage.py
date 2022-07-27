@@ -10,8 +10,9 @@ import tempfile
 import shutil
 import toml
 
-class ModManager():
-    def __init__(self, base_path, mods_path = None):
+
+class ModManager:
+    def __init__(self, base_path, mods_path=None):
         self.base_path = base_path
         self.mods_path = mods_path
         with open(os.path.join(self.base_path, "config.toml"), "r") as conf_fd:
@@ -42,7 +43,7 @@ class ModManager():
 
     def disable(self, mod: DivaMod):
         mod.disable()
-            
+
     def update(self, mod: DivaMod):
         if not mod.is_simple():
             self.delete_mod(mod)
@@ -66,7 +67,7 @@ class ModManager():
 
     def install_from_archive(self, archive_path: str):
         with open(archive_path, "rb") as arch_fd:
-            with tempfile.TemporaryDirectory(suffix = "d4m") as tempdir:
+            with tempfile.TemporaryDirectory(suffix="d4m") as tempdir:
                 api.extract_archive(arch_fd.read(), tempdir)
                 extracted = os.listdir(tempdir)
                 if "config.toml" in extracted:
@@ -80,9 +81,9 @@ class ModManager():
                 new_mod = diva_mod_create(mod_folder)
                 self.mods.append(new_mod)
 
-    def install_mod(self, mod_id: int, fetch_thumbnail=False): #mod_id and hash are used for modinfo.toml
+    def install_mod(self, mod_id: int, fetch_thumbnail=False):  # mod_id and hash are used for modinfo.toml
         data = api.fetch_mod_data(mod_id)
-        with tempfile.TemporaryDirectory(suffix = "d4m") as tempdir:
+        with tempfile.TemporaryDirectory(suffix="-d4m") as tempdir:
             api.download_and_extract_mod(data["download"], tempdir)
             extracted = os.listdir(tempdir)
             if "config.toml" in extracted:
@@ -100,9 +101,9 @@ class ModManager():
 
                 self.mods.append(new_mod)
 
-                #download mod thumbnail
+                # download mod thumbnail
                 if fetch_thumbnail:
-                   self.fetch_thumbnail(new_mod)
+                    self.fetch_thumbnail(new_mod)
             else:
                 raise RuntimeError("Failed to install mod: archive directory unusable")
 
@@ -126,15 +127,17 @@ class ModManager():
     def reload(self):
         self.mods = load_mods(self.mods_path)
 
+
 def load_mods(path: str) -> "list[DivaSimpleMod]":
     return [diva_mod_create(os.path.join(path, mod_path)) for mod_path in os.listdir(path)]
+
 
 def install_modloader(diva_path: str):
     try:
         import libarchive.public
     except:
         raise RuntimeError("Modloader installation not supported on this platform")
-    #TODO: add check here to see if platform supports this
+    # TODO: add check here to see if platform supports this
     version, download_url = check_modloader_version()
     resp = requests.get(download_url)
     if resp.status_code != 200:
@@ -145,9 +148,11 @@ def install_modloader(diva_path: str):
                 print(f"dir: {entry.pathname}")
                 os.makedirs(os.path.join(diva_path, entry.pathname), exist_ok=True)
             else:
+                dest = os.path.join(diva_path, entry.pathname)
+                os.makedirs(os.path.dirname(dest), exist_ok=True)
                 print(f"file: {entry.pathname}")
                 if entry.pathname == "config.toml":
-                    with open(os.path.join(diva_path, entry.pathname), "w") as fd:
+                    with open(dest, "w") as fd:
                         toml_buf = BytesIO()
                         [toml_buf.write(block) for block in entry.get_blocks()]
                         toml_buf.seek(0)
@@ -158,14 +163,15 @@ def install_modloader(diva_path: str):
                     with open(os.path.join(diva_path, entry.pathname), "wb") as fd:
                         for block in entry.get_blocks():
                             fd.write(block)
-    
+
 
 @functools.lru_cache(maxsize=None)
-def check_modloader_version() -> "tuple[packaging.version.Version,str]": 
+def check_modloader_version() -> "tuple[packaging.version.Version,str]":
     resp = requests.get(
         f"https://api.github.com/repos/blueskythlikesclouds/DivaModLoader/releases/latest"
     )
     if resp.status_code != 200:
         raise RuntimeError(f"Github API returned {resp.status_code}")
     j = resp.json()
-    return (packaging.version.Version(j["name"]), j["assets"][0]["browser_download_url"]) #TODO: don't make assumption about assets?
+    return (packaging.version.Version(j["name"]),
+            j["assets"][0]["browser_download_url"])  # TODO: don't make assumption about assets?
