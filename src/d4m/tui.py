@@ -181,7 +181,7 @@ def main():
     base_options = [
         ("Install new mods", menu_install),
         ("Manage existing mods", menu_manage),
-        ("Run Project Diva", lambda *_: os.system(f"xdg-open steam://run/{MEGAMIX_APPID}"))
+        ("Run Project Diva", lambda *_: subprocess.run([f"xdg-open", "steam://run/{MEGAMIX_APPID}"]))
     ]
 
     while True:
