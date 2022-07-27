@@ -108,8 +108,10 @@ def on_edit_mod(selections, mod_manager: ModManager):
         if platform == "win32":
             os.startfile(config_file_path)
         elif platform == "linux":
-            editor = os.environ.get("VISUAL", "gedit")
-            subprocess.Popen([editor, config_file_path])
+            try:
+                subprocess.Popen(["xdg-open", config_file_path])
+            except IOError:
+                show_d4m_infobox(f"Failed to open mod config:\n{format_exc()}")
         else:
             show_d4m_infobox(f"Unable to do that on your platform ({platform})", level="error")
 
