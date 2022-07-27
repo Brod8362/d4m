@@ -25,7 +25,7 @@ Requirements: `python >= 3.8`, `libarchive` (optional)
 
 ### From PyPi
 
-`python -m pip install d4m` (currently not available just yet)
+`python -m pip install d4m`
 
 ### For Windows (Bundled)
 
@@ -62,7 +62,7 @@ Linux/Windows (via pip)
 
 You can place an alias in your shell config, e.g `~/.bashrc` or `~/.zshrc`
 
-> `alias d4m=python -m d4m`
+> `alias d4m='python -m d4m'`
 
 Demo (TUI)
 -------
