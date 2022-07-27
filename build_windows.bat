@@ -22,4 +22,3 @@ if %libarchive%==0 (
 	echo Removing libarchive
 	del C:\Windows\System32\libarchive.dll
 )
-pause
