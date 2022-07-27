@@ -3,13 +3,12 @@ import os
 import toml
 import d4m.common
 
-CONFIG_PATH = os.path.join(appdirs.user_data_dir(), "d4m.toml")
+CONFIG_PATH = os.path.join(appdirs.user_config_dir(), "d4m.toml")
 
 CONFIG_OPTIONS = [
     ("diva_path", d4m.common.get_megamix_path()),
     ("last_d4m_update_check", 0),
     ("last_dmm_update_check", 0),
-
 ]
 
 
@@ -18,9 +17,9 @@ class D4mConfig:
         self.data = dict(CONFIG_OPTIONS)
         try:
             with open(CONFIG_PATH, "r") as conf_fd:
-                data = toml.load(conf_fd)
-                for (k, v) in CONFIG_OPTIONS:
-                    data[k] = v
+                loaded_conf = toml.load(conf_fd)
+                for k in loaded_conf:
+                    self.data[k] = loaded_conf[k]
         except FileNotFoundError:
             self.write()
 
