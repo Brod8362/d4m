@@ -261,7 +261,9 @@ class VoidFuncBackgroundWorker(PySide6.QtCore.QRunnable):
 class D4mGUI():
     def __init__(self, qapp: qwidgets.QApplication, mod_manager: ModManager, dml_version):
         threadpool = PySide6.QtCore.QThreadPool()
+        main_window = qwidgets.QMainWindow()
         window = qwidgets.QWidget()
+        main_window.setCentralWidget(window)
 
         ## Start d4m update check
         def d4m_update_check():
@@ -430,14 +432,16 @@ class D4mGUI():
         threadpool.start(buw)
 
         # # Populate main GUI
-        main_widget.addWidget(menu_bar)
+        main_window.setMenuBar(menu_bar)
+        main_window.setStatusBar(statusbar)
+
         main_widget.addLayout(top_row)
         main_widget.addWidget(mod_table)
         main_widget.addLayout(mod_buttons)
-        main_widget.addWidget(statusbar)
-        window.setMinimumSize(850, 500)
-        window.setMaximumSize(900, 1500)
-        window.show()
+        
+        main_window.setMinimumSize(850, 500)
+        main_window.setMaximumSize(900, 1500)
+        main_window.show()
         sys.exit(qapp.exec())
 
 def main():
