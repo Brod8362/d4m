@@ -14,6 +14,7 @@ from d4m.common import (VERSION, get_megamix_path,
                         modloader_is_installed, MEGAMIX_APPID, 
                         fetch_latest_d4m_version)
 from d4m.manage import ModManager, check_modloader_version, install_modloader
+from d4m.global_config import D4mConfig
 
 
 def generate_preview(mod_str: str, mod_manager: ModManager):
@@ -123,6 +124,8 @@ def main():
     d4m_latest, _ = fetch_latest_d4m_version()
     if d4m_latest > packaging.version.Version(VERSION):
         print(f"{colorama.Fore.YELLOW}A new version of d4m is available. Please update via\n\tpip install d4m=={d4m_latest}{colorama.Fore.RESET}")
+
+    d4m_config = D4mConfig()
 
     megamix_path = os.environ.get("D4M_INSTALL_DIR", get_megamix_path())
 

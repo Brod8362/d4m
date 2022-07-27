@@ -1,23 +1,23 @@
 #!/usr/bin/env python
 import os
 import subprocess
+import sys
+import time
 from sys import platform
 from time import strftime
 from traceback import format_exc, print_exc
-from PySide6.QtGui import QColor
-import PySide6.QtWidgets as qwidgets
+
 import PySide6.QtConcurrent
-import PySide6.QtCore 
-from PySide6.QtGui import QImage, QDesktopServices, QAction
-import sys
-
-import packaging.version
-
+import PySide6.QtCore
+import PySide6.QtWidgets as qwidgets
+import d4m.api
 import d4m.common
 import d4m.manage
+import packaging.version
+from PySide6.QtGui import QAction, QColor, QDesktopServices, QImage
 from d4m.manage import ModManager
-import d4m.api
-from d4m.divamod import DivaSimpleMod
+
+from d4m.global_config import D4mConfig
 
 LOG_HISTORY = []
 
@@ -111,7 +111,7 @@ def on_edit_mod(selections, mod_manager: ModManager):
             try:
                 subprocess.Popen(["xdg-open", config_file_path])
             except IOError:
-                show_d4m_infobox(f"Failed to open mod config:\n{format_exc()}")
+                show_d4m_infobox(f"Failed to open mod config:\n{format_exc()}", level="error")
         else:
             show_d4m_infobox(f"Unable to do that on your platform ({platform})", level="error")
 
@@ -305,7 +305,7 @@ class VoidFuncBackgroundWorker(PySide6.QtCore.QRunnable):
             self.on_complete()
 
 class D4mGUI():
-    def __init__(self, qapp: qwidgets.QApplication, mod_manager: ModManager, dml_version):
+    def __init__(self, qapp: qwidgets.QApplication, mod_manager: ModManager, dml_version, d4m_config: D4mConfig):
         threadpool = PySide6.QtCore.QThreadPool()
         main_window = qwidgets.QMainWindow()
         window = qwidgets.QWidget()
@@ -313,19 +313,23 @@ class D4mGUI():
 
         ## Start d4m update check
         def d4m_update_check():
-            latest, download = d4m.common.fetch_latest_d4m_version()
-            if latest > packaging.version.Version(d4m.common.VERSION):
-                res = show_d4m_infobox(
-                        f"A new verison of d4m is available ({latest})\nWould you like to open the releases page?", 
-                        level="question",
-                        buttons = qwidgets.QMessageBox.Yes | qwidgets.QMessageBox.No
-                    )
-                if res == qwidgets.QMessageBox.StandardButton.Yes:
-                    QDesktopServices.openUrl("https://github.com/Brod8362/d4m/releases")
+            last_checked = d4m_config["last_d4m_update_check"]
+            if time.time() - last_checked > 60*60:
+                latest, download = d4m.common.fetch_latest_d4m_version()
+                d4m_config["last_d4m_update_check"] = time.time()
+                d4m_config.write()
+                if latest > packaging.version.Version(d4m.common.VERSION):
+                    res = show_d4m_infobox(
+                            f"A new version of d4m is available ({latest})\nWould you like to open the releases page?",
+                            level="question",
+                            buttons = qwidgets.QMessageBox.Yes | qwidgets.QMessageBox.No
+                        )
+                    if res == qwidgets.QMessageBox.StandardButton.Yes:
+                        QDesktopServices.openUrl("https://github.com/Brod8362/d4m/releases")
 
         d4m_update_worker = VoidFuncBackgroundWorker(d4m_update_check)
         threadpool.start(d4m_update_worker)
-    
+
         main_widget = qwidgets.QVBoxLayout(window)
 
         menu_bar = qwidgets.QMenuBar()
@@ -369,7 +373,7 @@ class D4mGUI():
         open_diva_folder = qwidgets.QPushButton("Open Diva Install Folder")
         open_diva_folder.clicked.connect(lambda *_: QDesktopServices.openUrl(f"file://{mod_manager.base_path}"))
         mod_count_label = qwidgets.QLabel("-- mods / -- enabled")
-        
+
         top_row.addWidget(dml_status_label)
         top_row.addWidget(dml_enable_label, alignment=PySide6.QtCore.Qt.AlignLeft)
         top_row.addWidget(dml_toggle_button)
@@ -386,8 +390,8 @@ class D4mGUI():
             mod_table.setSelectionBehavior(qwidgets.QAbstractItemView.SelectionBehavior.SelectRows)
             mod_table.setEditTriggers(qwidgets.QAbstractItemView.NoEditTriggers)
             mod_table.setHorizontalHeaderLabels(
-                ["Thumbnail", "Mod Name", "Enabled", 
-                "Mod Author(s)", "Mod Version", "Gamebanana ID", 
+                ["Thumbnail", "Mod Name", "Enabled",
+                "Mod Author(s)", "Mod Version", "Gamebanana ID",
                 "Size"]
                 )
             mod_table.horizontalHeader().setSectionResizeMode(0, qwidgets.QHeaderView.ResizeMode.ResizeToContents)
@@ -412,7 +416,6 @@ class D4mGUI():
                 mod_enabled = qwidgets.QTableWidgetItem("Enabled" if mod.enabled else "Disabled")
                 mod_author = qwidgets.QTableWidgetItem(mod.author)
                 mod_author.setToolTip(mod.author)
-                mod_version = qwidgets.QTableWidgetItem(str(mod.version))
                 mod_size = qwidgets.QTableWidgetItem(f"{mod.size_bytes/(1024*1024):.1f}Mb")
                 if mod.is_simple():
                     mod_version = qwidgets.QTableWidgetItem(str(mod.version)+"*")
@@ -435,7 +438,7 @@ class D4mGUI():
                 mod_table.setItem(index, 6, mod_size)
                 enabled_mod_count = sum(1 for m in mod_manager.mods if m.enabled)
                 mod_count_label.setText(f"{len(mod_manager.mods)} mods / {enabled_mod_count} enabled")
-           
+
         populate_modlist(update_check=False)
 
         def autoupdate(func, *args):
@@ -485,15 +488,15 @@ class D4mGUI():
                 edit_mod_config_button.setEnabled(False)
 
         mod_table.itemSelectionChanged.connect(mod_edit_available)
-        
+
         refresh_mod_button = qwidgets.QPushButton("Refresh")
         refresh_mod_button.clicked.connect(lambda *_: autoupdate(on_refresh_click, mod_manager))
 
         mod_buttons.addWidget(install_mod_button)
         mod_buttons.addWidget(toggle_mod_button)
         mod_buttons.addWidget(update_mod_button)
-        mod_buttons.addWidget(delete_mod_button) 
-        mod_buttons.addWidget(edit_mod_config_button) 
+        mod_buttons.addWidget(delete_mod_button)
+        mod_buttons.addWidget(edit_mod_config_button)
         mod_buttons.addWidget(refresh_mod_button)
 
         buw = BackgroundUpdateWorker(mod_manager, populate_modlist, on_complete=lambda *_:update_mod_button.setEnabled(True))
@@ -506,7 +509,7 @@ class D4mGUI():
         main_widget.addLayout(top_row)
         main_widget.addWidget(mod_table)
         main_widget.addLayout(mod_buttons)
-        
+
         main_window.setMinimumSize(850, 500)
         main_window.setMaximumSize(900, 1500)
         main_window.show()
@@ -521,8 +524,10 @@ def main():
         show_d4m_infobox(f"libarchive is not installed/cannot import.\n{format_exc()}", level="question")
         sys.exit(0)
 
+    d4m_config = D4mConfig()
+
     try:
-        megamix_path = d4m.common.get_megamix_path()
+        megamix_path = os.environ.get("D4M_INSTALL_DIR", d4m_config.get_diva_path())
     except:
         content = f"Failed to determine where MegaMix is installed.\n{format_exc()}"
         show_d4m_infobox(content, level="error")
@@ -538,26 +543,29 @@ def main():
                 show_d4m_infobox(f"Failed to install DivaModLoader:\n {format_exc()}", level="error")
                 sys.exit(0)
     dml_version, dml_enabled, dml_mods_dir = d4m.common.get_modloader_info(megamix_path)
-    try:
-        dml_latest, dml_download = d4m.manage.check_modloader_version()
-        if dml_version < dml_latest:
-            content = f"A new version of DivaModLoader is available.\nCurrent: {dml_version}\nLatest: {dml_latest}\nDo you want to update?"
-            res = show_d4m_infobox(content, level="question", buttons = qwidgets.QMessageBox.Yes | qwidgets.QMessageBox.No)
-            if res == qwidgets.QMessageBox.StandardButton.Yes:
-                try:
-                    d4m.manage.install_modloader(megamix_path)
-                    show_d4m_infobox(f'DivaModLoader updated successfully.')
-                    dml_version = dml_latest
-                except:
-                    show_d4m_infobox(f"Failed to update DivaModLoader:\n{format_exc()}", level="error")
-                    sys.exit(0)       
-    except:
-        content = f"Cannot fetch latest DivaModLoader version: {format_exc()}"
-        show_d4m_infobox(content, level = "warn")
+    if time.time() - d4m_config["last_dmm_update_check"] > 60*60:
+        try:
+            d4m_config["last_dmm_update_check"] = time.time()
+            d4m_config.write()
+            dml_latest, dml_download = d4m.manage.check_modloader_version()
+            if dml_version < dml_latest:
+                content = f"A new version of DivaModLoader is available.\nCurrent: {dml_version}\nLatest: {dml_latest}\nDo you want to update?"
+                res = show_d4m_infobox(content, level="question", buttons = qwidgets.QMessageBox.Yes | qwidgets.QMessageBox.No)
+                if res == qwidgets.QMessageBox.StandardButton.Yes:
+                    try:
+                        d4m.manage.install_modloader(megamix_path)
+                        show_d4m_infobox(f'DivaModLoader updated successfully.')
+                        dml_version = dml_latest
+                    except:
+                        show_d4m_infobox(f"Failed to update DivaModLoader:\n{format_exc()}", level="error")
+                        sys.exit(0)
+        except:
+            content = f"Cannot fetch latest DivaModLoader version: {format_exc()}"
+            show_d4m_infobox(content, level = "warn")
 
     mod_manager = ModManager(megamix_path, mods_path=dml_mods_dir)
-    
-    D4mGUI(app, mod_manager, dml_version)
+
+    D4mGUI(app, mod_manager, dml_version, d4m_config)
 
 if __name__ == "__main__":
     main()
