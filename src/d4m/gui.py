@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from re import L
+from time import strftime
 from traceback import format_exc, print_exc
 from PySide6.QtGui import QColor
 import PySide6.QtWidgets as qwidgets
@@ -19,7 +20,8 @@ from d4m.divamod import DivaSimpleMod
 LOG_HISTORY = []
 
 def log_msg(content: str):
-    LOG_HISTORY.append(content)
+    timestamp = strftime("%H:%M:%S")
+    LOG_HISTORY.append(f"[{timestamp}] {content}")
     statusbar.showMessage(content)
 
 def show_d4m_infobox(content: str, level: str = "info", buttons = qwidgets.QMessageBox.Ok):
@@ -95,6 +97,26 @@ def on_delete_mod(selections, mod_manager: ModManager):
 
 def on_refresh_click(selections, mod_manager: ModManager):
     mod_manager.reload()
+
+class LogDialog(qwidgets.QDialog):
+    def __init__(self, parent=None):
+        super(LogDialog, self).__init__(parent)
+        self.count_widget = qwidgets.QLabel()
+        self.log_widget = qwidgets.QTextEdit()
+        self.layout = qwidgets.QVBoxLayout()
+        self.layout.addWidget(self.count_widget)
+        self.layout.addWidget(self.log_widget)
+        self.log_widget.setReadOnly(True)
+        self.setLayout(self.layout)
+        self.setWindowFlag(PySide6.QtCore.Qt.Tool)
+        statusbar.messageChanged.connect(self.render)
+        self.setWindowTitle("d4m log")
+        self.setMinimumSize(350, 200)
+        self.render()
+
+    def render(self):
+        self.count_widget.setText(f"{len(LOG_HISTORY)} log messages")
+        self.log_widget.setText("\n".join(LOG_HISTORY))
 
 class ModInstallDialog(qwidgets.QDialog):
     def __init__(self, mod_manager=None, callback=None, parent=None):
@@ -216,6 +238,10 @@ def install_from_archive(selected, mod_manager: ModManager):
                 show_d4m_infobox("Mod installed successfully.")
             except:
                 show_d4m_infobox(f"Failed to install from archive:\n{format_exc()}", level="error")
+
+def show_log(parent):
+        dialog = LogDialog(parent=parent)
+        dialog.show()
 
 def show_about(parent):
     about_str = f"""
@@ -399,10 +425,14 @@ class D4mGUI():
         action_load_from = QAction("Load from archive...", window)
         action_load_from.triggered.connect(lambda *_: autoupdate(install_from_archive, mod_manager))
 
+        action_open_log = QAction("Open Log...", window)
+        action_open_log.triggered.connect(lambda *_: show_log(main_window))
+
         action_quit = QAction("Exit", window)
         action_quit.triggered.connect(lambda *_: sys.exit(0))
 
         file_menu.addAction(action_load_from)
+        file_menu.addAction(action_open_log)
         file_menu.addAction(action_quit)
 
         ### Propogate action buttons
