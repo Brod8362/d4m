@@ -82,7 +82,7 @@ class ModManager():
 
     def install_mod(self, mod_id: int, fetch_thumbnail=False): #mod_id and hash are used for modinfo.toml
         data = api.fetch_mod_data(mod_id)
-        with tempfile.TemporaryDirectory(suffix = "d4m") as tempdir:
+        with tempfile.TemporaryDirectory(suffix = "-d4m") as tempdir:
             api.download_and_extract_mod(data["download"], tempdir)
             extracted = os.listdir(tempdir)
             if "config.toml" in extracted:
@@ -145,9 +145,11 @@ def install_modloader(diva_path: str):
                 print(f"dir: {entry.pathname}")
                 os.makedirs(os.path.join(diva_path, entry.pathname), exist_ok=True)
             else:
+                dest = os.path.join(diva_path, entry.pathname)
+                os.makedirs(os.path.dirname(dest), exist_ok=True)
                 print(f"file: {entry.pathname}")
                 if entry.pathname == "config.toml":
-                    with open(os.path.join(diva_path, entry.pathname), "w") as fd:
+                    with open(dest, "w") as fd:
                         toml_buf = BytesIO()
                         [toml_buf.write(block) for block in entry.get_blocks()]
                         toml_buf.seek(0)

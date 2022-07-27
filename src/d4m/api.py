@@ -3,6 +3,7 @@ from traceback import format_exc
 import requests
 import libarchive.public
 import os
+from traceback import print_exc
 
 BASE_DOMAIN = "https://api.gamebanana.com"
 GET_DATA_ENDPOINT = "/Core/Item/Data"
@@ -112,7 +113,9 @@ def extract_archive(archive: bytes, extract_to: str) -> None:
                 if entry.filetype.IFDIR:
                     os.makedirs(os.path.join(extract_to, entry.pathname), exist_ok=True)
                 else:
-                    with open(os.path.join(extract_to, entry.pathname), "wb") as fd:
+                    dest = os.path.join(extract_to, entry.pathname)
+                    os.makedirs(os.path.dirname(dest), exist_ok=True)
+                    with open(os.path.join(extract_to, entry.pathname), "xb") as fd:
                         for block in entry.get_blocks():
                             fd.write(block)
                     
@@ -120,6 +123,7 @@ def extract_archive(archive: bytes, extract_to: str) -> None:
         if isinstance(e, RuntimeError):
             raise(e)
         else:
+            print_exc()
             raise RuntimeError(f"libarchive error {e}") #TODO: there's probably a better exception for this
 
 
