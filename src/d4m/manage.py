@@ -44,10 +44,10 @@ class ModManager:
     def disable(self, mod: DivaMod):
         mod.disable()
 
-    def update(self, mod: DivaMod):
+    def update(self, mod: DivaMod, fetch_thumbnail=False):
         if not mod.is_simple():
             self.delete_mod(mod)
-            self.install_mod(mod.id)
+            self.install_mod(mod.id, fetch_thumbnail=fetch_thumbnail)
 
     def is_enabled(self, mod: DivaMod):
         return mod.enabled
