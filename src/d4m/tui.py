@@ -123,6 +123,9 @@ def do_update_all(mod_manager: ModManager):
             except Exception as e:
                 print(f"{colorama.Fore.RED}Failed to update {mod.name}: {e}{colorama.Fore.RESET}")
 
+def edit_d4m_config(*args):
+    editor = os.environ.get("EDITOR", "nano")
+    subprocess.run([editor, os.path.expanduser("~/.config/d4m.toml")])
 
 def main():
     print(f"d4m v{VERSION}")
@@ -143,8 +146,7 @@ def main():
         menu = TerminalMenu(["Yes", "No"], title=f"Couldn't determine diva install dir. Would you like to edit the d4m config file?")
         r = menu.show()
         if r == 0:
-            editor = os.environ.get("EDITOR", "nano")
-            subprocess.run([editor, os.path.expanduser("~/.config/d4m.toml")])
+            edit_d4m_config()
             sys.exit(0)
         else:
             sys.exit(1)
@@ -198,6 +200,7 @@ def main():
     base_options = [
         ("Install new mods", menu_install),
         ("Manage existing mods", menu_manage),
+        ("Edit d4m config", edit_d4m_config),
         ("Run Project Diva", lambda *_: subprocess.run([f"xdg-open", "steam://run/{MEGAMIX_APPID}"]))
     ]
 
