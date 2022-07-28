@@ -18,7 +18,7 @@ depends=(
     'python-toml'
     'python-simple-term-menu'
     'python-vdf'
-    #still missing python-libarchive
+    'python-libarchive'
 )
 makedepends=(
     'python-build'
