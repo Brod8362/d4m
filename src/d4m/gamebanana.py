@@ -44,8 +44,8 @@ def multi_fetch_mod_data(mod_ids: "list[int]") -> "list[dict]":
                     "hash": files[0]["_sMd5Checksum"],
                     "image": elem[1],
                     "download": files[0]["_sDownloadUrl"],
-                    "download_count": elem[2],
-                    "like_count": elem[3]
+                    "download_count": elem[3],
+                    "like_count": elem[2]
                 }
                 mod_info_cache[mod_id] = obj
                 mod_data.append(obj)
