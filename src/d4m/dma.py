@@ -67,7 +67,8 @@ def search_mods(query: str):
     resp = requests.get(
         DMA_BASE_DOMAIN + DMA_SEARCH,
         params = {
-            "name": query
+            "name": query,
+            "game_tag": 0
         }
     )
     if resp.status_code == 404:
