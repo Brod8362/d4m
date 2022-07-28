@@ -3,6 +3,7 @@ import requests
 DMA_BASE_DOMAIN = "https://divamodarchive.xyz/api/v1"
 DMA_SEARCH = "/posts/latest"
 DMA_GET_BY_ID = "/posts/"
+DMA_GET_BY_ID_BULK = "/posts/posts"
 
 mod_info_cache = {}
 
@@ -15,26 +16,26 @@ def multi_fetch_mod_data(mod_ids: "list[int]") -> "list[dict]":
         else:
             need_fetch.append(mod_id)
 
-    for mod_id in need_fetch:
+    if len(need_fetch) > 0:
         resp = requests.get(
-            DMA_BASE_DOMAIN + DMA_GET_BY_ID + str(mod_id)
+            DMA_BASE_DOMAIN + DMA_GET_BY_ID_BULK,
+            params = [("post_id", i) for i in need_fetch]
         )
         if resp.status_code != 200:
-            #TODO: how handle this?
-            pass
+            raise RuntimeError(f"DMA info returned {resp.status_code}")
 
         j = resp.json()
-
-        obj = {
-            "id": mod_id,
-            "hash": j["date"],
-            "image": j["image"],
-            "download": j["link"],
-            "download_count": j["downloads"],
-            "like_count": j["likes"]
-        }
-        mod_info_cache[mod_id] = obj
-        mod_data.append(obj)
+        for post in j:
+            obj = {
+                "id": post["id"],
+                "hash": post["date"],
+                "image": post["image"],
+                "download": post["link"],
+                "download_count": post["downloads"],
+                "like_count": post["likes"]
+            }
+            mod_info_cache[mod_id] = obj
+            mod_data.append(obj)
 
     return mod_data
         
@@ -43,7 +44,24 @@ def fetch_mod_data(mod_id: int) -> "dict":
     if mod_id in mod_info_cache:
         return mod_info_cache[mod_id]
 
-    return multi_fetch_mod_data([mod_id])[0]
+    resp = requests.get(
+        DMA_BASE_DOMAIN + DMA_GET_BY_ID + str(mod_id)
+    )
+    if resp.status_code != 200:
+        raise RuntimeError(f"DMA info returned {resp.status_code}")
+
+    j = resp.json()
+
+    obj = {
+        "id": mod_id,
+        "hash": j["date"],
+        "image": j["image"],
+        "download": j["link"],
+        "download_count": j["downloads"],
+        "like_count": j["likes"]
+    }
+    mod_info_cache[mod_id] = obj
+    return obj
 
 def search_mods(query: str):
     resp = requests.get(
