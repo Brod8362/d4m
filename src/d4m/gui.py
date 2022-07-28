@@ -162,7 +162,7 @@ class DmmMigrateDialog(qwidgets.QDialog):
             eligible = [m for m in mod_manager.mods if m.can_attempt_dmm_migration()]
             successful_count = 0
             self.progress_bar.setRange(0, len(eligible))
-            self.progress_log.append(f"{len(eligible)} mods are eligible for migration\n")
+            self.progress_log.append(f"{len(eligible)} mod(s) are eligible for migration\n")
             for (index, mod) in enumerate(eligible):
                 if mod.can_attempt_dmm_migration():
                     self.progress_log.append(f"Attempting to migrate {mod.name}...\n")
@@ -171,14 +171,14 @@ class DmmMigrateDialog(qwidgets.QDialog):
                         self.progress_log.append(f"Migrated {mod.name} successfully.\n")
                         successful_count+=1
                     else:
-                        self.progress_log.append(f"Failed to migreate {mod.name}.\n")       
+                        self.progress_log.append(f"Failed to migrate {mod.name}.\n")       
                     self.progress_bar.setValue(index+1)
 
             self.progress_bar.setRange(0, 1)
             self.progress_bar.setValue(1)
             if successful_count > 0:
                 self.progress_log.append(f"Migrated {successful_count}/{len(eligible)} successfully.\n")
-                self.progress_log.append(f"Please note that migrated mods may need an update before the thumbnail appears.\n")
+                self.progress_log.append(f"Please note that migrated mod(s) may need an update before the thumbnail appears.\n")
             if callback:
                 callback()
 
@@ -246,9 +246,9 @@ class ModInstallDialog(qwidgets.QDialog):
                     self.progress_bar.setValue(index + 1)
             # when all is done
             if success == len(selected_ids):
-                self.status_label.setText(f"Installed {success} mods successfully.")
+                self.status_label.setText(f"Installed {success} mod(s) successfully.")
             else:
-                self.status_label.setText(f"Installed {success} mods ({len(selected_ids) - success} errors)")
+                self.status_label.setText(f"Installed {success} mod(s) ({len(selected_ids) - success} errors)")
             self.search_button.setEnabled(True)
             self.install_button.setEnabled(True)
 
@@ -279,7 +279,7 @@ class ModInstallDialog(qwidgets.QDialog):
 
 
             self.status_label.setText(
-                f"Found <strong>{len(results)}</strong> mods matching <em>{self.mod_name_input.text()}</em>")
+                f"Found <strong>{len(results)}</strong> mod(s) matching <em>{self.mod_name_input.text()}</em>")
             self.found_mod_list.clear()
             self.found_mod_list.setColumnCount(5)
             self.found_mod_list.setHorizontalHeaderLabels(["Mod", "Origin", "Mod ID", "Info", "Status"])
@@ -461,7 +461,7 @@ class D4mGUI:
         run_diva_button.clicked.connect(lambda *_: QDesktopServices.openUrl(f"steam://run/{d4m.common.MEGAMIX_APPID}"))
         open_diva_folder = qwidgets.QPushButton("Open Diva Install Folder")
         open_diva_folder.clicked.connect(lambda *_: QDesktopServices.openUrl(f"file://{mod_manager.base_path}"))
-        mod_count_label = qwidgets.QLabel("-- mods / -- enabled")
+        mod_count_label = qwidgets.QLabel("-- mod(s) / -- enabled")
 
         top_row.addWidget(dml_status_label)
         top_row.addWidget(dml_enable_label, alignment=PySide6.QtCore.Qt.AlignLeft)
@@ -534,7 +534,7 @@ class D4mGUI:
                 mod_table.setItem(index, 4, mod_version)
                 mod_table.setItem(index, 7, mod_size)
                 enabled_mod_count = sum(1 for m in mod_manager.mods if m.enabled)
-                mod_count_label.setText(f"{len(mod_manager.mods)} mods / {enabled_mod_count} enabled")
+                mod_count_label.setText(f"{len(mod_manager.mods)} mod(s) / {enabled_mod_count} enabled")
 
         populate_modlist(update_check=False)
 
@@ -647,6 +647,7 @@ def main():
                 megamix_path = folders[0]
         else:
             sys.exit(1)
+
     if not d4m.common.modloader_is_installed(megamix_path):
         content = f"DivaModLoader is not installed. Would you like d4m to install the latest version of DivaModLoader?"
         res = show_d4m_infobox(content, buttons=qwidgets.QMessageBox.Yes | qwidgets.QMessageBox.No, level="question")
@@ -657,6 +658,7 @@ def main():
             except:
                 show_d4m_infobox(f"Failed to install DivaModLoader:\n {format_exc()}", level="error")
                 sys.exit(0)
+
     dml_version, dml_enabled, dml_mods_dir = d4m.common.get_modloader_info(megamix_path)
     if time.time() - d4m_config["last_dmm_update_check"] > 60 * 60:
         try:
