@@ -178,7 +178,7 @@ class DmmMigrateDialog(qwidgets.QDialog):
             self.progress_bar.setValue(1)
             if successful_count > 0:
                 self.progress_log.append(f"Migrated {successful_count}/{len(eligible)} successfully.\n")
-                self.progress_log.append(f"Please note that all migrated mods may need an update before the thumbnail appears.\n")
+                self.progress_log.append(f"Please note that migrated mods may need an update before the thumbnail appears.\n")
             if callback:
                 callback()
 
@@ -211,6 +211,14 @@ class ModInstallDialog(qwidgets.QDialog):
         self.install_button.setEnabled(False)
         self.progress_bar = qwidgets.QProgressBar()
 
+        self.checkbox_layout = qwidgets.QHBoxLayout()
+        self.checkbox_search_dma = qwidgets.QCheckBox("Search Diva Mod Archive")
+        self.checkbox_search_dma.setChecked(True)
+        self.checkbox_search_gb = qwidgets.QCheckBox("Search GameBanana")
+        self.checkbox_search_gb.setChecked(True)
+        self.checkbox_layout.addWidget(self.checkbox_search_dma)
+        self.checkbox_layout.addWidget(self.checkbox_search_gb)
+
         self.search_button = qwidgets.QPushButton("Search")
         self.found_mod_list = qwidgets.QTableWidget()
 
@@ -223,12 +231,12 @@ class ModInstallDialog(qwidgets.QDialog):
             self.progress_bar.setValue(0)
             self.status_label.setText(f"Preparing to install {len(selected_ids)} mod(s)")
             success = 0
-            for index, (mod_id, mod_name) in enumerate(selected_ids):
+            for index, (mod_id, mod_name, mod_origin) in enumerate(selected_ids):
                 text = f"<strong>{index + 1}/{len(selected_ids)}... Installing mod {mod_name} "
                 self.status_label.setText(text)
                 if not mod_manager.mod_is_installed(mod_id):
                     try:
-                        mod_manager.install_mod(mod_id, fetch_thumbnail=True)
+                        mod_manager.install_mod(mod_id, fetch_thumbnail=True, origin=mod_origin)
                         success += 1
                     except Exception as e:
                         print_exc()
@@ -246,32 +254,47 @@ class ModInstallDialog(qwidgets.QDialog):
 
         def populate_search_results():
             try:
-                self.progress_bar.setRange(0, 3)
+                results = []
+                self.progress_bar.setRange(0, 5)
                 self.progress_bar.setValue(1)
-                results = d4m.api.search_mods(self.mod_name_input.text())
-                self.progress_bar.setValue(2)
-                d4m.api.multi_fetch_mod_data(t[0] for t in results)  # fetch detailed info
+                if self.checkbox_search_gb.isChecked():
+                    gb_results = d4m.api.search_mods(self.mod_name_input.text(), origin="gamebanana")
+                    for e in gb_results:
+                        results.append((e[0], e[1], "gamebanana"))
+                    self.progress_bar.setValue(2)
+                    d4m.api.multi_fetch_mod_data(list(map(lambda e: e[0], gb_results)), origin="gamebanana")
+
+                if self.checkbox_search_dma.isChecked():
+                    self.progress_bar.setValue(3)
+                    dma_results = d4m.api.search_mods(self.mod_name_input.text(), origin="divamodarchive")
+                    for e in dma_results:
+                        results.append((e[0], e[1], "divamodarchive"))
+                    self.progress_bar.setValue(4)
+                    d4m.api.multi_fetch_mod_data(list(map(lambda e: e[0], dma_results)), origin="divamodarchive")
             except RuntimeError as e:
                 self.status_label.setText(f"Err: <strong color=red>{e}</strong>")
                 return
             finally:
-                self.progress_bar.setValue(3)
+                self.progress_bar.setValue(5)
+
+
             self.status_label.setText(
                 f"Found <strong>{len(results)}</strong> mods matching <em>{self.mod_name_input.text()}</em>")
             self.found_mod_list.clear()
-            self.found_mod_list.setColumnCount(5)
-            self.found_mod_list.setHorizontalHeaderLabels(["Mod", "Mod ID", "Likes", "Downloads", "Status", ])
+            self.found_mod_list.setColumnCount(6)
+            self.found_mod_list.setHorizontalHeaderLabels(["Mod", "Origin", "Mod ID", "Likes", "Downloads", "Status"])
             self.found_mod_list.horizontalHeader().setSectionResizeMode(0,
                                                                         qwidgets.QHeaderView.ResizeMode.ResizeToContents)
             self.found_mod_list.setEditTriggers(qwidgets.QAbstractItemView.NoEditTriggers)
             self.found_mod_list.setSelectionBehavior(qwidgets.QAbstractItemView.SelectionBehavior.SelectRows)
             self.found_mod_list.horizontalHeader().setStretchLastSection(True)
             self.found_mod_list.setRowCount(len(results))
-            for index, (m_id, m_name) in enumerate(results):
+            for index, (m_id, m_name, m_origin) in enumerate(results):
                 detailed_mod_info = d4m.api.fetch_mod_data(
                     m_id)  # should already be fetched and cached, no performance concerns here
                 mod_label = qwidgets.QTableWidgetItem(m_name)
                 mod_label.setToolTip(m_name)
+                mod_origin = qwidgets.QTableWidgetItem(m_origin)
                 mod_id_label = qwidgets.QTableWidgetItem(str(m_id))
                 status = "Available"
                 if mod_manager.mod_is_installed(m_id):
@@ -282,10 +305,11 @@ class ModInstallDialog(qwidgets.QDialog):
                 mod_downloads_label = qwidgets.QTableWidgetItem(str(detailed_mod_info["download_count"]))
                 mod_likes_label = qwidgets.QTableWidgetItem(str(detailed_mod_info["like_count"]))
                 self.found_mod_list.setItem(index, 0, mod_label)
-                self.found_mod_list.setItem(index, 1, mod_id_label)
-                self.found_mod_list.setItem(index, 2, mod_downloads_label)
-                self.found_mod_list.setItem(index, 3, mod_likes_label)
-                self.found_mod_list.setItem(index, 4, mod_installed_label)
+                self.found_mod_list.setItem(index, 1, mod_origin) 
+                self.found_mod_list.setItem(index, 2, mod_id_label)
+                self.found_mod_list.setItem(index, 3, mod_downloads_label)
+                self.found_mod_list.setItem(index, 4, mod_likes_label)
+                self.found_mod_list.setItem(index, 5, mod_installed_label)
             if len(results) > 0:
                 self.install_button.setEnabled(True)
                 self.install_button.clicked.connect(lambda *_: on_install_click(results))
@@ -297,14 +321,14 @@ class ModInstallDialog(qwidgets.QDialog):
 
         # Populate main layout
         self.win_layout.addLayout(self.search_layout)
+        self.win_layout.addLayout(self.checkbox_layout)
         self.win_layout.addWidget(self.found_mod_list)
         self.win_layout.addWidget(self.status_label)
         self.win_layout.addWidget(self.progress_bar)
         self.win_layout.addWidget(self.install_button)
 
         self.setLayout(self.win_layout)
-        self.setMinimumWidth(550)
-        self.setMinimumHeight(350)
+        self.setMinimumSize(650, 350)
         self.setWindowTitle("d4m - Install new mods")
 
 
@@ -452,7 +476,7 @@ class D4mGUI:
         image_thumbnail_cache = {}
 
         ### Propogate mod list
-        mod_table.setColumnCount(7)  # thumbnail, image, name, creator, version, id, size
+        mod_table.setColumnCount(8)  # thumbnail, image, name, creator, version, id, size
 
         def populate_modlist(update_check=True):
             mod_table.clear()
@@ -460,7 +484,7 @@ class D4mGUI:
             mod_table.setEditTriggers(qwidgets.QAbstractItemView.NoEditTriggers)
             mod_table.setHorizontalHeaderLabels(
                 ["Thumbnail", "Mod Name", "Enabled",
-                 "Mod Author(s)", "Mod Version", "Gamebanana ID",
+                 "Mod Author(s)", "Mod Version", "Origin", "Mod ID",
                  "Size"]
             )
             mod_table.horizontalHeader().setSectionResizeMode(0, qwidgets.QHeaderView.ResizeMode.ResizeToContents)
@@ -503,13 +527,15 @@ class D4mGUI:
                     # mod_id = qwidgets.QTableWidgetItem(f"<a href=\"{url}\">{mod.id}</a>")
                     # TODO: how to embed URL in table?
                     mod_id = qwidgets.QTableWidgetItem(str(mod.id))
-                    mod_table.setItem(index, 5, mod_id)
+                    mod_origin = qwidgets.QTableWidgetItem(mod.origin)
+                    mod_table.setItem(index, 5, mod_origin)
+                    mod_table.setItem(index, 6, mod_id)
                 mod_table.setItem(index, 0, mod_image)
                 mod_table.setItem(index, 1, mod_name)
                 mod_table.setItem(index, 2, mod_enabled)
                 mod_table.setItem(index, 3, mod_author)
                 mod_table.setItem(index, 4, mod_version)
-                mod_table.setItem(index, 6, mod_size)
+                mod_table.setItem(index, 7, mod_size)
                 enabled_mod_count = sum(1 for m in mod_manager.mods if m.enabled)
                 mod_count_label.setText(f"{len(mod_manager.mods)} mods / {enabled_mod_count} enabled")
 
@@ -589,8 +615,8 @@ class D4mGUI:
         main_widget.addWidget(mod_table)
         main_widget.addLayout(mod_buttons)
 
-        main_window.setMinimumSize(850, 500)
-        main_window.setMaximumSize(900, 1500)
+        main_window.setMinimumSize(950, 500)
+        main_window.setMaximumSize(1000, 1500)
         main_window.show()
         sys.exit(qapp.exec())
 
