@@ -104,6 +104,7 @@ class DivaMod(DivaSimpleMod):
                 mod_data = toml.load(moddata_fd)
                 self.id = mod_data["id"]
                 self.hash = mod_data["hash"]
+                self.origin = mod_data.get("origin", "gamebanana")
         except (IOError, KeyError):
             raise UnmanageableModError
 
@@ -121,4 +122,4 @@ class DivaMod(DivaSimpleMod):
 
     @functools.cached_property
     def modinfo(self):
-        return api.fetch_mod_data(self.id)
+        return api.fetch_mod_data(self.id, origin=self.origin)

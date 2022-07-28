@@ -13,6 +13,7 @@ from d4m.common import (VERSION, get_modloader_info,
 from d4m.global_config import D4mConfig
 from d4m.manage import ModManager, check_modloader_version, install_modloader
 
+from traceback import print_exc
 
 def generate_preview(mod_str: str, mod_manager: ModManager):
     content = []
@@ -28,6 +29,7 @@ def generate_preview(mod_str: str, mod_manager: ModManager):
     content.append(f"Status: {enable_str}")
     content.append(f"Install Path: {mod.path}")
     if not mod.is_simple():
+        content.append(f"Origin: {mod.origin}")
         content.append(f"Mod ID: {mod.id}")
         utd_str = f"{colorama.Fore.YELLOW}Out of date{colorama.Fore.RESET}" if mod.is_out_of_date() else f"{colorama.Fore.GREEN}Up to date{colorama.Fore.RESET}"
         content.append(f"Update Status: {utd_str}")
@@ -36,7 +38,9 @@ def generate_preview(mod_str: str, mod_manager: ModManager):
 
 def menu_install(mod_manager: ModManager):
     search_str = input("Search for a mod...:")
-    found_mods = api.search_mods(search_str)
+    gb_mods = list(map(lambda t: (t[0], t[1], "gamebanana"), api.search_mods(search_str, origin = "gamebanana")))
+    dma_mods = list(map(lambda t: (t[0], t[1], "divamodarchive"), api.search_mods(search_str, origin = "divamodarchive")))
+    found_mods = gb_mods + dma_mods
     installed_ids = [mod.id for mod in mod_manager.mods if not mod.is_simple()]
     if not found_mods:
         print(f"No mods matching {colorama.Style.BRIGHT}{search_str}{colorama.Style.RESET_ALL} found.")
@@ -44,7 +48,7 @@ def menu_install(mod_manager: ModManager):
         options = ["Cancel"]
 
         def mod_str_gen(m_t):
-            content = m_t[1].strip().replace("\n", "")
+            content = m_t[1].strip().replace("\n", "")+f" [{m_t[2]}]"
             if m_t[0] in installed_ids:
                 return f"(installed) {content}"
             return content
@@ -59,10 +63,11 @@ def menu_install(mod_manager: ModManager):
             else:
                 try:
                     print(f"Installing {mod[1]} ({mod[0]})")
-                    mod_manager.install_mod(mod[0])
+                    mod_manager.install_mod(mod[0], origin=mod[2])
                     print(f"{colorama.Fore.GREEN}Installed {mod[1]}{colorama.Fore.RESET}")
                 except Exception as e:
-                    print(f"{colorama.Fore.RED}Failed to stalled {mod[1]} {colorama.Fore.RESET}({e})")
+                    print(f"{colorama.Fore.RED}Failed to install {mod[1]} {colorama.Fore.RESET}({e})")
+                    print_exc()
 
 
 def menu_manage(mod_manager: ModManager):
@@ -99,8 +104,7 @@ def menu_manage(mod_manager: ModManager):
                     "This mod has an unknown origin and thus cannot be auto-updated. Try deleting it and reinstalling it using d4m.")
             else:
                 if selected_mod.is_out_of_date():
-                    mod_manager.delete_mod(selected_mod)
-                    mod_manager.install_mod(selected_mod.id)
+                    mod_manager.update(selected_mod)
                 else:
                     print(f"{selected_mod.name} is up-to-date.")
         elif inner_choice == 3:
