@@ -137,7 +137,7 @@ class ModManager:
 
 
 def load_mods(path: str) -> "list[DivaSimpleMod]":
-    return [diva_mod_create(os.path.join(path, mod_path)) for mod_path in os.listdir(path)]
+    return [diva_mod_create(os.path.join(path, mod_path)) for mod_path in os.listdir(path) if os.path.isdir(os.path.join(path, mod_path))]
 
 def extract_archive(archive: bytes, extract_to: str) -> None:
     try:
