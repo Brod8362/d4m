@@ -1,0 +1,55 @@
+# if you're looking at this from github: I HATE USING FLATPAK!
+# i never had an opinion before, and i totally get the reason for it existing
+# but holy shit is it annoying to work with as a developer.
+app-id: pw.byakuren.d4m
+runtime: org.kde.Platform
+runtime-version: '6.3'
+sdk: org.kde.Sdk
+command: d4m.sh
+modules:
+  - name: libarchive
+    sources:
+      - type: archive
+        url: https://github.com/libarchive/libarchive/releases/download/v3.6.1/libarchive-3.6.1.tar.gz
+        sha256: c676146577d989189940f1959d9e3980d28513d74eedfbc6b7f15ea45fe54ee2
+  - name: d4m-gui
+    buildsystem: simple
+    build-commands:
+      - pip3 install --prefix=/app .
+    build-options:
+      build-args:
+        - --share=network
+    sources:
+      - type: git
+        branch: main
+        url: https://github.com/brod8362/d4m.git
+  - name: d4m.sh
+    buildsystem: simple
+    build-commands:
+      - install -D d4m.sh /app/bin/d4m.sh
+    sources:
+      - type: file
+        path: d4m.sh
+  - name: desktop-files
+    buildsystem: simple
+    build-commands:
+      - install -D flatpak.desktop /app/share/applications/pw.byakuren.d4m.desktop
+      - install -D EXPORT_32.png /app/share/icons/hicolor/32x32/apps/pw.byakuren.d4m.png
+      - install -D EXPORT_64.png /app/share/icons/hicolor/64x64/apps/pw.byakuren.d4m.png
+      - install -D EXPORT_128.png /app/share/icons/hicolor/128x128/apps/pw.byakuren.d4m.png
+    sources:
+      - type: file
+        path: flatpak.desktop
+      - type: file
+        path: ../resources/EXPORT_32.png
+      - type: file
+        path: ../resources/EXPORT_64.png
+      - type: file
+        path: ../resources/EXPORT_128.png
+finish-args:
+  - --share=ipc
+  - --socket=fallback-x11
+  - --socket=wayland
+  - --share=network
+  - --filesystem=host
+  - --device=dri
