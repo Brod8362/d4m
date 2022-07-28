@@ -33,12 +33,23 @@ modules:
   - name: desktop-files
     buildsystem: simple
     build-commands:
-      - install -D pw.byakuren.d4m.desktop /app/share/applications/pw.byakuren.d4m.desktop
+      - install -D flatpak.desktop /app/share/applications/pw.byakuren.d4m.desktop
+      - install -D EXPORT_32.png /app/share/icons/hicolor/32x32/apps/pw.byakuren.d4m.png
+      - install -D EXPORT_64.png /app/share/icons/hicolor/64x64/apps/pw.byakuren.d4m.png
+      - install -D EXPORT_128.png /app/share/icons/hicolor/128x128/apps/pw.byakuren.d4m.png
     sources:
       - type: file
-        path: pw.byakuren.d4m.desktop
+        path: flatpak.desktop
+      - type: file
+        path: ../resources/EXPORT_32.png
+      - type: file
+        path: ../resources/EXPORT_64.png
+      - type: file
+        path: ../resources/EXPORT_128.png
 finish-args:
   - --share=ipc
-  - --socket=x11
+  - --socket=fallback-x11
+  - --socket=wayland
   - --share=network
   - --filesystem=host
+  - --device=dri

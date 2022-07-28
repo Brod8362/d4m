@@ -3,3 +3,6 @@ dist
 flatpak/.flatpak-builder
 flatpak/build
 src/d4m.egg-info
+EXPORT_32.png
+EXPORT_64.png
+EXPORT_128.png
