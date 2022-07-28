@@ -35,13 +35,14 @@ pkgver() {
 
 build() {
     cd "$srcdir/$pkgname"
+	git checkout aur
     python -m build --no-isolation
 }
 
 package() {
     cd "$srcdir/$pkgname"
 
-    cp resources/logo.svg "$pkgdir"/usr/share/pixmaps/d4m.svg
-    cp aur/d4m.desktop "$pkgdir"/usr/share/applications/d4m.desktop
+    install -D resources/logo.svg "$pkgdir/usr/share/pixmaps/d4m.svg"
+    install -D aur/d4m.desktop "$pkgdir/usr/share/applications/d4m.desktop"
     python -m installer --destdir="$pkgdir" dist/*.whl
 }
