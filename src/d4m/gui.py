@@ -78,7 +78,7 @@ def on_update_mod(selections, mod_manager: ModManager):
         else:
             if mod.is_out_of_date():
                 log_msg(f"Updating {mod}...")
-                mod_manager.update(mod)
+                mod_manager.update(mod, fetch_thumbnail=True)
                 log_msg(f"{mod} updated successfully.")
                 updated += 1
             else:
@@ -149,6 +149,53 @@ class LogDialog(qwidgets.QDialog):
         self.count_widget.setText(f"{len(LOG_HISTORY)} log messages")
         self.log_widget.setText("\n".join(LOG_HISTORY))
 
+class DmmMigrateDialog(qwidgets.QDialog):
+    def __init__(self, mod_manager=None, callback=None, parent=None):
+        super(DmmMigrateDialog, self).__init__(parent)
+        self.win_layout = qwidgets.QVBoxLayout()
+
+        self.progress_log = qwidgets.QTextEdit()
+        self.progress_bar = qwidgets.QProgressBar()
+        self.start_button = qwidgets.QPushButton("Start")
+
+        def migrate():
+            eligible = [m for m in mod_manager.mods if m.can_attempt_dmm_migration()]
+            successful_count = 0
+            self.progress_bar.setRange(0, len(eligible))
+            self.progress_log.append(f"{len(eligible)} mods are eligible for migration\n")
+            for (index, mod) in enumerate(eligible):
+                if mod.can_attempt_dmm_migration():
+                    self.progress_log.append(f"Attempting to migrate {mod.name}...\n")
+                    success = mod.attempt_migrate_from_dmm()
+                    if success:
+                        self.progress_log.append(f"Migrated {mod.name} successfully.\n")
+                        successful_count+=1
+                    else:
+                        self.progress_log.append(f"Failed to migreate {mod.name}.\n")       
+                    self.progress_bar.setValue(index+1)
+
+            self.progress_bar.setRange(0, 1)
+            self.progress_bar.setValue(1)
+            if successful_count > 0:
+                self.progress_log.append(f"Migrated {successful_count}/{len(eligible)} successfully.\n")
+                self.progress_log.append(f"Please note that all migrated mods may need an update before the thumbnail appears.\n")
+            if callback:
+                callback()
+
+        self.progress_log.setReadOnly(True)
+        self.start_button.clicked.connect(migrate)
+        self.progress_log.append("Click start to attempt migration from DivaModManager.")
+
+        self.win_layout.addWidget(self.progress_log)
+        self.win_layout.addWidget(self.progress_bar)
+        self.win_layout.addWidget(self.start_button)
+        self.setLayout(self.win_layout)
+        self.setMinimumSize(350, 300)
+        self.setWindowTitle("d4m - Migrate from DivaModManager")
+
+def on_migrate_clicked(mod_manager, callback):
+    dialog = DmmMigrateDialog(mod_manager=mod_manager, callback=callback)
+    dialog.exec()
 
 class ModInstallDialog(qwidgets.QDialog):
     def __init__(self, mod_manager=None, callback=None, parent=None):
@@ -441,8 +488,12 @@ class D4mGUI:
                 mod_size = qwidgets.QTableWidgetItem(f"{mod.size_bytes / (1024 * 1024):.1f}Mb")
                 if mod.is_simple():
                     mod_version = qwidgets.QTableWidgetItem(str(mod.version) + "*")
-                    mod_version.setToolTip(
-                        "This mod is missing metadata information and the latest version cannot be determined.")
+                    if mod.can_attempt_dmm_migration():
+                        mod_version.setToolTip("This mod may be able to be migrated from DivaModManager.")
+                        mod_version.setBackground(QColor.fromRgb(0,255,255))
+                    else:
+                        mod_version.setToolTip(
+                            "This mod is missing metadata information and the latest version cannot be determined.")
                 else:
                     mod_version = qwidgets.QTableWidgetItem(str(mod.version))
                     if update_check and mod.is_out_of_date():
@@ -478,11 +529,15 @@ class D4mGUI:
         action_open_log = QAction("Open Log...", window)
         action_open_log.triggered.connect(lambda *_: show_log(main_window))
 
+        action_migrate_dmm = QAction("Migrate from DivaModManager...", window)
+        action_migrate_dmm.triggered.connect(lambda *_:on_migrate_clicked(mod_manager, populate_modlist(update_check=buw.updates_ready)))
+
         action_quit = QAction("Exit", window)
         action_quit.triggered.connect(lambda *_: sys.exit(0))
 
         file_menu.addAction(action_load_from)
         file_menu.addAction(action_open_log)
+        file_menu.addAction(action_migrate_dmm)
         file_menu.addAction(action_quit)
 
         ### Propogate action buttons
