@@ -554,9 +554,21 @@ def main():
     try:
         megamix_path = os.environ.get("D4M_INSTALL_DIR", d4m_config.get_diva_path())
     except:
-        content = f"Failed to determine where MegaMix is installed.\n{format_exc()}"
-        show_d4m_infobox(content, level="error")
-        sys.exit(1)
+        content = f"Failed to determine where MegaMix is installed.\nWould you like to specify the install directory manually?"
+        res = show_d4m_infobox(content, level="error", buttons=qwidgets.QMessageBox.Yes | qwidgets.QMessageBox.No)
+        if res == qwidgets.QMessageBox.StandardButton.Yes:
+            file_dialog = qwidgets.QFileDialog()
+            file_dialog.setFileMode(qwidgets.QFileDialog.Directory)
+            if file_dialog.exec():
+                folders = file_dialog.selectedFiles()
+                if len(folders) != 1:
+                    show_d4m_infobox("uh oh", level="error")
+                    sys.exit(1)
+                d4m_config["diva_path"] = folders[0]
+                d4m_config.write()
+                megamix_path = folders[0]
+        else:
+            sys.exit(1)
     if not d4m.common.modloader_is_installed(megamix_path):
         content = f"DivaModLoader is not installed. Would you like d4m to install the latest version of DivaModLoader?"
         res = show_d4m_infobox(content, buttons=qwidgets.QMessageBox.Yes | qwidgets.QMessageBox.No, level="question")
