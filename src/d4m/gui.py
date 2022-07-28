@@ -234,7 +234,7 @@ class ModInstallDialog(qwidgets.QDialog):
             for index, (mod_id, mod_name, mod_origin) in enumerate(selected_ids):
                 text = f"<strong>{index + 1}/{len(selected_ids)}... Installing mod {mod_name} "
                 self.status_label.setText(text)
-                if not mod_manager.mod_is_installed(mod_id):
+                if not mod_manager.mod_is_installed(mod_id, origin=mod_origin):
                     try:
                         mod_manager.install_mod(mod_id, fetch_thumbnail=True, origin=mod_origin)
                         success += 1
@@ -296,7 +296,7 @@ class ModInstallDialog(qwidgets.QDialog):
                 mod_origin = qwidgets.QTableWidgetItem(m_origin)
                 mod_id_label = qwidgets.QTableWidgetItem(str(m_id))
                 status = "Available"
-                if mod_manager.mod_is_installed(m_id):
+                if mod_manager.mod_is_installed(m_id, origin=m_origin):
                     status = "Installed"
                 if detailed_mod_info["hash"] == "err":
                     status = "Unavailable (Error)"
