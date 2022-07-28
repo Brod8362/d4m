@@ -281,8 +281,8 @@ class ModInstallDialog(qwidgets.QDialog):
             self.status_label.setText(
                 f"Found <strong>{len(results)}</strong> mods matching <em>{self.mod_name_input.text()}</em>")
             self.found_mod_list.clear()
-            self.found_mod_list.setColumnCount(6)
-            self.found_mod_list.setHorizontalHeaderLabels(["Mod", "Origin", "Mod ID", "Likes", "Downloads", "Status"])
+            self.found_mod_list.setColumnCount(5)
+            self.found_mod_list.setHorizontalHeaderLabels(["Mod", "Origin", "Mod ID", "Info", "Status"])
             self.found_mod_list.horizontalHeader().setSectionResizeMode(0,
                                                                         qwidgets.QHeaderView.ResizeMode.ResizeToContents)
             self.found_mod_list.setEditTriggers(qwidgets.QAbstractItemView.NoEditTriggers)
@@ -290,8 +290,7 @@ class ModInstallDialog(qwidgets.QDialog):
             self.found_mod_list.horizontalHeader().setStretchLastSection(True)
             self.found_mod_list.setRowCount(len(results))
             for index, (m_id, m_name, m_origin) in enumerate(results):
-                detailed_mod_info = d4m.api.fetch_mod_data(
-                    m_id)  # should already be fetched and cached, no performance concerns here
+                detailed_mod_info = d4m.api.fetch_mod_data(m_id, origin=m_origin)  # should already be fetched and cached, no performance concerns here
                 mod_label = qwidgets.QTableWidgetItem(m_name)
                 mod_label.setToolTip(m_name)
                 mod_origin = qwidgets.QTableWidgetItem(m_origin)
@@ -302,14 +301,12 @@ class ModInstallDialog(qwidgets.QDialog):
                 if detailed_mod_info["hash"] == "err":
                     status = "Unavailable (Error)"
                 mod_installed_label = qwidgets.QTableWidgetItem(status)
-                mod_downloads_label = qwidgets.QTableWidgetItem(str(detailed_mod_info["download_count"]))
-                mod_likes_label = qwidgets.QTableWidgetItem(str(detailed_mod_info["like_count"]))
+                mod_info_label = qwidgets.QTableWidgetItem(f"❤️{detailed_mod_info['like_count']} ⬇️{detailed_mod_info['download_count']}")
                 self.found_mod_list.setItem(index, 0, mod_label)
                 self.found_mod_list.setItem(index, 1, mod_origin) 
                 self.found_mod_list.setItem(index, 2, mod_id_label)
-                self.found_mod_list.setItem(index, 3, mod_downloads_label)
-                self.found_mod_list.setItem(index, 4, mod_likes_label)
-                self.found_mod_list.setItem(index, 5, mod_installed_label)
+                self.found_mod_list.setItem(index, 3, mod_info_label)
+                self.found_mod_list.setItem(index, 4, mod_installed_label)
             if len(results) > 0:
                 self.install_button.setEnabled(True)
                 self.install_button.clicked.connect(lambda *_: on_install_click(results))
