@@ -11,6 +11,7 @@ import shutil
 import libarchive.public
 import toml
 
+from traceback import print_exc
 
 class ModManager:
     def __init__(self, base_path, mods_path=None):
