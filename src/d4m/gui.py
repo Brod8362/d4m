@@ -492,13 +492,14 @@ class D4mGUI:
             for (index, mod) in enumerate(mod_manager.mods):
                 mod_image = qwidgets.QTableWidgetItem("No Preview")
                 if mod.has_thumbnail():
-                    if mod.id in image_thumbnail_cache:
+                    if not mod.is_simple() and mod.id in image_thumbnail_cache:
                         image = image_thumbnail_cache[mod.id]
                     else:
                         base = QImage()
                         base.load(mod.get_thumbnail_path())
                         image = base.scaled(128, 128, aspectMode=PySide6.QtCore.Qt.AspectRatioMode.KeepAspectRatio)
-                        image_thumbnail_cache[mod.id] = image
+                        if not mod.is_simple():
+                            image_thumbnail_cache[mod.id] = image
                     mod_image.setData(PySide6.QtCore.Qt.DecorationRole, image)
                     mod_image.setText("")
                 mod_name = qwidgets.QTableWidgetItem(mod.name)
