@@ -16,6 +16,9 @@ depends=(
     'python-requests'
     'python-colorama'
     'python-toml'
+    'python-simple-term-menu'
+    'python-vdf'
+    #still missing python-libarchive
 )
 makedepends=(
     'python-build'
