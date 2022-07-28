@@ -78,7 +78,7 @@ def on_update_mod(selections, mod_manager: ModManager):
         else:
             if mod.is_out_of_date():
                 log_msg(f"Updating {mod}...")
-                mod_manager.update(mod)
+                mod_manager.update(mod, fetch_thumbnail=True)
                 log_msg(f"{mod} updated successfully.")
                 updated += 1
             else:
@@ -149,6 +149,53 @@ class LogDialog(qwidgets.QDialog):
         self.count_widget.setText(f"{len(LOG_HISTORY)} log messages")
         self.log_widget.setText("\n".join(LOG_HISTORY))
 
+class DmmMigrateDialog(qwidgets.QDialog):
+    def __init__(self, mod_manager=None, callback=None, parent=None):
+        super(DmmMigrateDialog, self).__init__(parent)
+        self.win_layout = qwidgets.QVBoxLayout()
+
+        self.progress_log = qwidgets.QTextEdit()
+        self.progress_bar = qwidgets.QProgressBar()
+        self.start_button = qwidgets.QPushButton("Start")
+
+        def migrate():
+            eligible = [m for m in mod_manager.mods if m.can_attempt_dmm_migration()]
+            successful_count = 0
+            self.progress_bar.setRange(0, len(eligible))
+            self.progress_log.append(f"{len(eligible)} mod(s) are eligible for migration\n")
+            for (index, mod) in enumerate(eligible):
+                if mod.can_attempt_dmm_migration():
+                    self.progress_log.append(f"Attempting to migrate {mod.name}...\n")
+                    success = mod.attempt_migrate_from_dmm()
+                    if success:
+                        self.progress_log.append(f"Migrated {mod.name} successfully.\n")
+                        successful_count+=1
+                    else:
+                        self.progress_log.append(f"Failed to migrate {mod.name}.\n")       
+                    self.progress_bar.setValue(index+1)
+
+            self.progress_bar.setRange(0, 1)
+            self.progress_bar.setValue(1)
+            if successful_count > 0:
+                self.progress_log.append(f"Migrated {successful_count}/{len(eligible)} successfully.\n")
+                self.progress_log.append(f"Please note that migrated mod(s) may need an update before the thumbnail appears.\n")
+            if callback:
+                callback()
+
+        self.progress_log.setReadOnly(True)
+        self.start_button.clicked.connect(migrate)
+        self.progress_log.append("Click start to attempt migration from DivaModManager.")
+
+        self.win_layout.addWidget(self.progress_log)
+        self.win_layout.addWidget(self.progress_bar)
+        self.win_layout.addWidget(self.start_button)
+        self.setLayout(self.win_layout)
+        self.setMinimumSize(350, 300)
+        self.setWindowTitle("d4m - Migrate from DivaModManager")
+
+def on_migrate_clicked(mod_manager, callback):
+    dialog = DmmMigrateDialog(mod_manager=mod_manager, callback=callback)
+    dialog.exec()
 
 class ModInstallDialog(qwidgets.QDialog):
     def __init__(self, mod_manager=None, callback=None, parent=None):
@@ -164,6 +211,14 @@ class ModInstallDialog(qwidgets.QDialog):
         self.install_button.setEnabled(False)
         self.progress_bar = qwidgets.QProgressBar()
 
+        self.checkbox_layout = qwidgets.QHBoxLayout()
+        self.checkbox_search_dma = qwidgets.QCheckBox("Search Diva Mod Archive")
+        self.checkbox_search_dma.setChecked(True)
+        self.checkbox_search_gb = qwidgets.QCheckBox("Search GameBanana")
+        self.checkbox_search_gb.setChecked(True)
+        self.checkbox_layout.addWidget(self.checkbox_search_dma)
+        self.checkbox_layout.addWidget(self.checkbox_search_gb)
+
         self.search_button = qwidgets.QPushButton("Search")
         self.found_mod_list = qwidgets.QTableWidget()
 
@@ -176,12 +231,12 @@ class ModInstallDialog(qwidgets.QDialog):
             self.progress_bar.setValue(0)
             self.status_label.setText(f"Preparing to install {len(selected_ids)} mod(s)")
             success = 0
-            for index, (mod_id, mod_name) in enumerate(selected_ids):
+            for index, (mod_id, mod_name, mod_origin) in enumerate(selected_ids):
                 text = f"<strong>{index + 1}/{len(selected_ids)}... Installing mod {mod_name} "
                 self.status_label.setText(text)
-                if not mod_manager.mod_is_installed(mod_id):
+                if not mod_manager.mod_is_installed(mod_id, origin=mod_origin):
                     try:
-                        mod_manager.install_mod(mod_id, fetch_thumbnail=True)
+                        mod_manager.install_mod(mod_id, fetch_thumbnail=True, origin=mod_origin)
                         success += 1
                     except Exception as e:
                         print_exc()
@@ -191,53 +246,66 @@ class ModInstallDialog(qwidgets.QDialog):
                     self.progress_bar.setValue(index + 1)
             # when all is done
             if success == len(selected_ids):
-                self.status_label.setText(f"Installed {success} mods successfully.")
+                self.status_label.setText(f"Installed {success} mod(s) successfully.")
             else:
-                self.status_label.setText(f"Installed {success} mods ({len(selected_ids) - success} errors)")
+                self.status_label.setText(f"Installed {success} mod(s) ({len(selected_ids) - success} errors)")
             self.search_button.setEnabled(True)
             self.install_button.setEnabled(True)
 
         def populate_search_results():
             try:
-                self.progress_bar.setRange(0, 3)
+                results = []
+                self.progress_bar.setRange(0, 5)
                 self.progress_bar.setValue(1)
-                results = d4m.api.search_mods(self.mod_name_input.text())
-                self.progress_bar.setValue(2)
-                d4m.api.multi_fetch_mod_data(t[0] for t in results)  # fetch detailed info
+                if self.checkbox_search_gb.isChecked():
+                    gb_results = d4m.api.search_mods(self.mod_name_input.text(), origin="gamebanana")
+                    for e in gb_results:
+                        results.append((e[0], e[1], "gamebanana"))
+                    self.progress_bar.setValue(2)
+                    d4m.api.multi_fetch_mod_data(list(map(lambda e: e[0], gb_results)), origin="gamebanana")
+
+                if self.checkbox_search_dma.isChecked():
+                    self.progress_bar.setValue(3)
+                    dma_results = d4m.api.search_mods(self.mod_name_input.text(), origin="divamodarchive")
+                    for e in dma_results:
+                        results.append((e[0], e[1], "divamodarchive"))
+                    self.progress_bar.setValue(4)
+                    d4m.api.multi_fetch_mod_data(list(map(lambda e: e[0], dma_results)), origin="divamodarchive")
             except RuntimeError as e:
                 self.status_label.setText(f"Err: <strong color=red>{e}</strong>")
                 return
             finally:
-                self.progress_bar.setValue(3)
+                self.progress_bar.setValue(5)
+
+
             self.status_label.setText(
-                f"Found <strong>{len(results)}</strong> mods matching <em>{self.mod_name_input.text()}</em>")
+                f"Found <strong>{len(results)}</strong> mod(s) matching <em>{self.mod_name_input.text()}</em>")
             self.found_mod_list.clear()
             self.found_mod_list.setColumnCount(5)
-            self.found_mod_list.setHorizontalHeaderLabels(["Mod", "Mod ID", "Likes", "Downloads", "Status", ])
+            self.found_mod_list.setHorizontalHeaderLabels(["Mod", "Origin", "Mod ID", "Info", "Status"])
             self.found_mod_list.horizontalHeader().setSectionResizeMode(0,
                                                                         qwidgets.QHeaderView.ResizeMode.ResizeToContents)
             self.found_mod_list.setEditTriggers(qwidgets.QAbstractItemView.NoEditTriggers)
             self.found_mod_list.setSelectionBehavior(qwidgets.QAbstractItemView.SelectionBehavior.SelectRows)
             self.found_mod_list.horizontalHeader().setStretchLastSection(True)
             self.found_mod_list.setRowCount(len(results))
-            for index, (m_id, m_name) in enumerate(results):
-                detailed_mod_info = d4m.api.fetch_mod_data(
-                    m_id)  # should already be fetched and cached, no performance concerns here
+            for index, (m_id, m_name, m_origin) in enumerate(results):
+                detailed_mod_info = d4m.api.fetch_mod_data(m_id, origin=m_origin)  # should already be fetched and cached, no performance concerns here
                 mod_label = qwidgets.QTableWidgetItem(m_name)
                 mod_label.setToolTip(m_name)
+                mod_origin = qwidgets.QTableWidgetItem(m_origin)
                 mod_id_label = qwidgets.QTableWidgetItem(str(m_id))
                 status = "Available"
-                if mod_manager.mod_is_installed(m_id):
+                if mod_manager.mod_is_installed(m_id, origin=m_origin):
                     status = "Installed"
                 if detailed_mod_info["hash"] == "err":
                     status = "Unavailable (Error)"
                 mod_installed_label = qwidgets.QTableWidgetItem(status)
-                mod_downloads_label = qwidgets.QTableWidgetItem(str(detailed_mod_info["download_count"]))
-                mod_likes_label = qwidgets.QTableWidgetItem(str(detailed_mod_info["like_count"]))
+                mod_info_label = qwidgets.QTableWidgetItem(f"❤️{detailed_mod_info['like_count']} ⬇️{detailed_mod_info['download_count']}")
                 self.found_mod_list.setItem(index, 0, mod_label)
-                self.found_mod_list.setItem(index, 1, mod_id_label)
-                self.found_mod_list.setItem(index, 2, mod_downloads_label)
-                self.found_mod_list.setItem(index, 3, mod_likes_label)
+                self.found_mod_list.setItem(index, 1, mod_origin) 
+                self.found_mod_list.setItem(index, 2, mod_id_label)
+                self.found_mod_list.setItem(index, 3, mod_info_label)
                 self.found_mod_list.setItem(index, 4, mod_installed_label)
             if len(results) > 0:
                 self.install_button.setEnabled(True)
@@ -250,14 +318,14 @@ class ModInstallDialog(qwidgets.QDialog):
 
         # Populate main layout
         self.win_layout.addLayout(self.search_layout)
+        self.win_layout.addLayout(self.checkbox_layout)
         self.win_layout.addWidget(self.found_mod_list)
         self.win_layout.addWidget(self.status_label)
         self.win_layout.addWidget(self.progress_bar)
         self.win_layout.addWidget(self.install_button)
 
         self.setLayout(self.win_layout)
-        self.setMinimumWidth(550)
-        self.setMinimumHeight(350)
+        self.setMinimumSize(650, 350)
         self.setWindowTitle("d4m - Install new mods")
 
 
@@ -393,7 +461,7 @@ class D4mGUI:
         run_diva_button.clicked.connect(lambda *_: QDesktopServices.openUrl(f"steam://run/{d4m.common.MEGAMIX_APPID}"))
         open_diva_folder = qwidgets.QPushButton("Open Diva Install Folder")
         open_diva_folder.clicked.connect(lambda *_: QDesktopServices.openUrl(f"file://{mod_manager.base_path}"))
-        mod_count_label = qwidgets.QLabel("-- mods / -- enabled")
+        mod_count_label = qwidgets.QLabel("-- mod(s) / -- enabled")
 
         top_row.addWidget(dml_status_label)
         top_row.addWidget(dml_enable_label, alignment=PySide6.QtCore.Qt.AlignLeft)
@@ -405,7 +473,7 @@ class D4mGUI:
         image_thumbnail_cache = {}
 
         ### Propogate mod list
-        mod_table.setColumnCount(7)  # thumbnail, image, name, creator, version, id, size
+        mod_table.setColumnCount(8)  # thumbnail, image, name, creator, version, id, size
 
         def populate_modlist(update_check=True):
             mod_table.clear()
@@ -413,7 +481,7 @@ class D4mGUI:
             mod_table.setEditTriggers(qwidgets.QAbstractItemView.NoEditTriggers)
             mod_table.setHorizontalHeaderLabels(
                 ["Thumbnail", "Mod Name", "Enabled",
-                 "Mod Author(s)", "Mod Version", "Gamebanana ID",
+                 "Mod Author(s)", "Mod Version", "Origin", "Mod ID",
                  "Size"]
             )
             mod_table.horizontalHeader().setSectionResizeMode(0, qwidgets.QHeaderView.ResizeMode.ResizeToContents)
@@ -424,13 +492,14 @@ class D4mGUI:
             for (index, mod) in enumerate(mod_manager.mods):
                 mod_image = qwidgets.QTableWidgetItem("No Preview")
                 if mod.has_thumbnail():
-                    if mod.id in image_thumbnail_cache:
+                    if not mod.is_simple() and mod.id in image_thumbnail_cache:
                         image = image_thumbnail_cache[mod.id]
                     else:
                         base = QImage()
                         base.load(mod.get_thumbnail_path())
                         image = base.scaled(128, 128, aspectMode=PySide6.QtCore.Qt.AspectRatioMode.KeepAspectRatio)
-                        image_thumbnail_cache[mod.id] = image
+                        if not mod.is_simple():
+                            image_thumbnail_cache[mod.id] = image
                     mod_image.setData(PySide6.QtCore.Qt.DecorationRole, image)
                     mod_image.setText("")
                 mod_name = qwidgets.QTableWidgetItem(mod.name)
@@ -441,8 +510,12 @@ class D4mGUI:
                 mod_size = qwidgets.QTableWidgetItem(f"{mod.size_bytes / (1024 * 1024):.1f}Mb")
                 if mod.is_simple():
                     mod_version = qwidgets.QTableWidgetItem(str(mod.version) + "*")
-                    mod_version.setToolTip(
-                        "This mod is missing metadata information and the latest version cannot be determined.")
+                    if mod.can_attempt_dmm_migration():
+                        mod_version.setToolTip("This mod may be able to be migrated from DivaModManager.")
+                        mod_version.setBackground(QColor.fromRgb(0,255,255))
+                    else:
+                        mod_version.setToolTip(
+                            "This mod is missing metadata information and the latest version cannot be determined.")
                 else:
                     mod_version = qwidgets.QTableWidgetItem(str(mod.version))
                     if update_check and mod.is_out_of_date():
@@ -452,15 +525,17 @@ class D4mGUI:
                     # mod_id = qwidgets.QTableWidgetItem(f"<a href=\"{url}\">{mod.id}</a>")
                     # TODO: how to embed URL in table?
                     mod_id = qwidgets.QTableWidgetItem(str(mod.id))
-                    mod_table.setItem(index, 5, mod_id)
+                    mod_origin = qwidgets.QTableWidgetItem(mod.origin)
+                    mod_table.setItem(index, 5, mod_origin)
+                    mod_table.setItem(index, 6, mod_id)
                 mod_table.setItem(index, 0, mod_image)
                 mod_table.setItem(index, 1, mod_name)
                 mod_table.setItem(index, 2, mod_enabled)
                 mod_table.setItem(index, 3, mod_author)
                 mod_table.setItem(index, 4, mod_version)
-                mod_table.setItem(index, 6, mod_size)
+                mod_table.setItem(index, 7, mod_size)
                 enabled_mod_count = sum(1 for m in mod_manager.mods if m.enabled)
-                mod_count_label.setText(f"{len(mod_manager.mods)} mods / {enabled_mod_count} enabled")
+                mod_count_label.setText(f"{len(mod_manager.mods)} mod(s) / {enabled_mod_count} enabled")
 
         populate_modlist(update_check=False)
 
@@ -478,11 +553,15 @@ class D4mGUI:
         action_open_log = QAction("Open Log...", window)
         action_open_log.triggered.connect(lambda *_: show_log(main_window))
 
+        action_migrate_dmm = QAction("Migrate from DivaModManager...", window)
+        action_migrate_dmm.triggered.connect(lambda *_:on_migrate_clicked(mod_manager, populate_modlist(update_check=buw.updates_ready)))
+
         action_quit = QAction("Exit", window)
         action_quit.triggered.connect(lambda *_: sys.exit(0))
 
         file_menu.addAction(action_load_from)
         file_menu.addAction(action_open_log)
+        file_menu.addAction(action_migrate_dmm)
         file_menu.addAction(action_quit)
 
         ### Propogate action buttons
@@ -534,8 +613,8 @@ class D4mGUI:
         main_widget.addWidget(mod_table)
         main_widget.addLayout(mod_buttons)
 
-        main_window.setMinimumSize(850, 500)
-        main_window.setMaximumSize(900, 1500)
+        main_window.setMinimumSize(950, 500)
+        main_window.setMaximumSize(1000, 1500)
         main_window.show()
         sys.exit(qapp.exec())
 
@@ -554,9 +633,22 @@ def main():
     try:
         megamix_path = os.environ.get("D4M_INSTALL_DIR", d4m_config.get_diva_path())
     except:
-        content = f"Failed to determine where MegaMix is installed.\n{format_exc()}"
-        show_d4m_infobox(content, level="error")
-        sys.exit(1)
+        content = f"Failed to determine where MegaMix is installed.\nWould you like to specify the install directory manually?"
+        res = show_d4m_infobox(content, level="error", buttons=qwidgets.QMessageBox.Yes | qwidgets.QMessageBox.No)
+        if res == qwidgets.QMessageBox.StandardButton.Yes:
+            file_dialog = qwidgets.QFileDialog()
+            file_dialog.setFileMode(qwidgets.QFileDialog.Directory)
+            if file_dialog.exec():
+                folders = file_dialog.selectedFiles()
+                if len(folders) != 1:
+                    show_d4m_infobox("uh oh", level="error")
+                    sys.exit(1)
+                d4m_config["diva_path"] = folders[0]
+                d4m_config.write()
+                megamix_path = folders[0]
+        else:
+            sys.exit(1)
+
     if not d4m.common.modloader_is_installed(megamix_path):
         content = f"DivaModLoader is not installed. Would you like d4m to install the latest version of DivaModLoader?"
         res = show_d4m_infobox(content, buttons=qwidgets.QMessageBox.Yes | qwidgets.QMessageBox.No, level="question")
@@ -567,6 +659,7 @@ def main():
             except:
                 show_d4m_infobox(f"Failed to install DivaModLoader:\n {format_exc()}", level="error")
                 sys.exit(0)
+
     dml_version, dml_enabled, dml_mods_dir = d4m.common.get_modloader_info(megamix_path)
     if time.time() - d4m_config["last_dmm_update_check"] > 60 * 60:
         try:

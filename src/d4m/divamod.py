@@ -3,6 +3,7 @@ import toml
 import packaging.version
 import d4m.api as api
 import functools
+import json
 
 
 class UnmanageableModError(ValueError):
@@ -19,7 +20,7 @@ def diva_mod_create(path: str):
 class DivaSimpleMod:
     def __init__(self, path: str):
         self.path = path
-        with open(os.path.join(path, "config.toml")) as mod_conf_fd:
+        with open(os.path.join(path, "config.toml"), "r", encoding="UTF-8") as mod_conf_fd:
             data = toml.load(mod_conf_fd)
             self.version = None if "version" not in data else packaging.version.Version(data["version"])
             self.name = data.get("name", os.path.basename(path))
@@ -33,18 +34,18 @@ class DivaSimpleMod:
         return f'{self.name} ({self.version}) by {self.author}'
 
     def enable(self):
-        with open(os.path.join(self.path, "config.toml"), "r") as mod_conf_fd:
+        with open(os.path.join(self.path, "config.toml"), "r", encoding="UTF-8") as mod_conf_fd:
             data = toml.load(mod_conf_fd)
         data["enabled"] = True
-        with open(os.path.join(self.path, "config.toml"), "w") as mod_conf_fd:
+        with open(os.path.join(self.path, "config.toml"), "w", encoding="UTF-8") as mod_conf_fd:
             toml.dump(data, mod_conf_fd)
             self.enabled = True
 
     def disable(self):
-        with open(os.path.join(self.path, "config.toml"), "r") as mod_conf_fd:
+        with open(os.path.join(self.path, "config.toml"), "r", encoding="UTF-8") as mod_conf_fd:
             data = toml.load(mod_conf_fd)
         data["enabled"] = False
-        with open(os.path.join(self.path, "config.toml"), "w") as mod_conf_fd:
+        with open(os.path.join(self.path, "config.toml"), "w", encoding="UTF-8") as mod_conf_fd:
             toml.dump(data, mod_conf_fd)
             self.enabled = False
 
@@ -63,6 +64,33 @@ class DivaSimpleMod:
         else:
             None
 
+    def can_attempt_dmm_migration(self) -> bool:
+        return os.path.exists(os.path.join(self.path, "mod.json"))
+
+    def attempt_migrate_from_dmm(self) -> bool:
+        """Attempt to use dmm's mod.json file to get meqtadata."""
+        try:
+            with open(os.path.join(self.path, "mod.json"), "r", encoding="UTF-8") as dmm_fd:
+                dmm_data = json.load(dmm_fd)
+                if "homepage" in dmm_data:
+                    homepage = dmm_data["homepage"]
+                    if "gamebanana" in homepage:
+                        potential_id = homepage.split("/")[-1]
+                        try:
+                            api.fetch_mod_data(potential_id)
+                            with open(os.path.join(self.path, "modinfo.toml"), "w", encoding="UTF-8") as d4m_fd:
+                                d4m_mod_data = {
+                                    "id": potential_id,
+                                    "hash": "no-hash"
+                                }
+                                toml.dump(d4m_mod_data, d4m_fd)
+                                return True
+                        except:
+                            return False
+        except:
+            return False
+        return False
+
     def is_simple(self):
         return True
 
@@ -76,6 +104,7 @@ class DivaMod(DivaSimpleMod):
                 mod_data = toml.load(moddata_fd)
                 self.id = mod_data["id"]
                 self.hash = mod_data["hash"]
+                self.origin = mod_data.get("origin", "gamebanana")
         except (IOError, KeyError):
             raise UnmanageableModError
 
@@ -88,6 +117,9 @@ class DivaMod(DivaSimpleMod):
     def is_simple(self):
         return False
 
+    def can_attempt_dmm_migration(self) -> bool:
+        return False
+
     @functools.cached_property
     def modinfo(self):
-        return api.fetch_mod_data(self.id)
+        return api.fetch_mod_data(self.id, origin=self.origin)

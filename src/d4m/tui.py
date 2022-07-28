@@ -13,6 +13,7 @@ from d4m.common import (VERSION, get_modloader_info,
 from d4m.global_config import D4mConfig
 from d4m.manage import ModManager, check_modloader_version, install_modloader
 
+from traceback import print_exc
 
 def generate_preview(mod_str: str, mod_manager: ModManager):
     content = []
@@ -28,6 +29,7 @@ def generate_preview(mod_str: str, mod_manager: ModManager):
     content.append(f"Status: {enable_str}")
     content.append(f"Install Path: {mod.path}")
     if not mod.is_simple():
+        content.append(f"Origin: {mod.origin}")
         content.append(f"Mod ID: {mod.id}")
         utd_str = f"{colorama.Fore.YELLOW}Out of date{colorama.Fore.RESET}" if mod.is_out_of_date() else f"{colorama.Fore.GREEN}Up to date{colorama.Fore.RESET}"
         content.append(f"Update Status: {utd_str}")
@@ -36,7 +38,9 @@ def generate_preview(mod_str: str, mod_manager: ModManager):
 
 def menu_install(mod_manager: ModManager):
     search_str = input("Search for a mod...:")
-    found_mods = api.search_mods(search_str)
+    gb_mods = list(map(lambda t: (t[0], t[1], "gamebanana"), api.search_mods(search_str, origin = "gamebanana")))
+    dma_mods = list(map(lambda t: (t[0], t[1], "divamodarchive"), api.search_mods(search_str, origin = "divamodarchive")))
+    found_mods = gb_mods + dma_mods
     installed_ids = [mod.id for mod in mod_manager.mods if not mod.is_simple()]
     if not found_mods:
         print(f"No mods matching {colorama.Style.BRIGHT}{search_str}{colorama.Style.RESET_ALL} found.")
@@ -44,7 +48,7 @@ def menu_install(mod_manager: ModManager):
         options = ["Cancel"]
 
         def mod_str_gen(m_t):
-            content = m_t[1].strip().replace("\n", "")
+            content = m_t[1].strip().replace("\n", "")+f" [{m_t[2]}]"
             if m_t[0] in installed_ids:
                 return f"(installed) {content}"
             return content
@@ -59,10 +63,11 @@ def menu_install(mod_manager: ModManager):
             else:
                 try:
                     print(f"Installing {mod[1]} ({mod[0]})")
-                    mod_manager.install_mod(mod[0])
+                    mod_manager.install_mod(mod[0], origin=mod[2])
                     print(f"{colorama.Fore.GREEN}Installed {mod[1]}{colorama.Fore.RESET}")
                 except Exception as e:
-                    print(f"{colorama.Fore.RED}Failed to stalled {mod[1]} {colorama.Fore.RESET}({e})")
+                    print(f"{colorama.Fore.RED}Failed to install {mod[1]} {colorama.Fore.RESET}({e})")
+                    print_exc()
 
 
 def menu_manage(mod_manager: ModManager):
@@ -99,8 +104,7 @@ def menu_manage(mod_manager: ModManager):
                     "This mod has an unknown origin and thus cannot be auto-updated. Try deleting it and reinstalling it using d4m.")
             else:
                 if selected_mod.is_out_of_date():
-                    mod_manager.delete_mod(selected_mod)
-                    mod_manager.install_mod(selected_mod.id)
+                    mod_manager.update(selected_mod)
                 else:
                     print(f"{selected_mod.name} is up-to-date.")
         elif inner_choice == 3:
@@ -123,6 +127,28 @@ def do_update_all(mod_manager: ModManager):
             except Exception as e:
                 print(f"{colorama.Fore.RED}Failed to update {mod.name}: {e}{colorama.Fore.RESET}")
 
+def edit_d4m_config(*args):
+    editor = os.environ.get("EDITOR", "nano")
+    subprocess.run([editor, os.path.expanduser("~/.config/d4m.toml")])
+
+def migrate_from_dmm(mod_manager: ModManager):
+    attempted = 0
+    successful = 0
+    for mod in mod_manager.mods:
+        if mod.is_simple() and mod.can_attempt_dmm_migration():
+            print(f"Attempting to migrate {mod.name}...")
+            attempted+=1
+            res = mod.attempt_migrate_from_dmm()
+            if res:
+                print(f"{colorama.Fore.GREEN}Successfully migrated {mod.name}.{colorama.Fore.RESET}")
+                successful+=1
+            else:
+                print(f"{colorama.Fore.RED}Couldn't migrate {mod.name}{colorama.Fore.RESET}")
+    if attempted > 0:
+        print(f"Attempted to migrate {attempted} mods, {successful} successful.")
+    else:
+        print(f"No mods elgibile for migration.")
+    mod_manager.reload()
 
 def main():
     print(f"d4m v{VERSION}")
@@ -137,20 +163,18 @@ def main():
             print(
                 f"{colorama.Fore.YELLOW}A new version of d4m is available. Please update via\n\tpip install d4m=={d4m_latest}{colorama.Fore.RESET}")
 
-    megamix_path = os.environ.get("D4M_INSTALL_DIR", d4m_config.get_diva_path())
-
-    if not megamix_path or not os.path.exists(megamix_path):
-        print("Project Diva MegaMix+ does not appear to be installed.", file=sys.stderr)
-        if megamix_path:
-            print(f"Expected it to be at {megamix_path!r} but it is not there.", file=sys.stderr)
-        if "D4M_INSTALL_DIR" not in os.environ:
-            print("This tool uses Steam's library path to figure out where the installation should be.",
-                  file=sys.stderr)
-            print("Override the D4M_INSTALL_DIR environment variable to set this path manually.", file=sys.stderr)
-        elif os.environ.get("D4M_INSTALL_DIR") == "":
-            print("You have D4M_INSTALL_DIR set, but it is an empty string,"
-                  " which is overriding this tool's normal search routine.", file=sys.stderr)
-        sys.exit(1)
+    try:
+        megamix_path = d4m_config.get_diva_path()
+    except:
+        menu = TerminalMenu(["Yes", "No"], title=f"Couldn't determine diva install dir. Would you like to edit the d4m config file?")
+        r = menu.show()
+        if r == 0:
+            edit_d4m_config()
+            sys.exit(0)
+        else:
+            sys.exit(1)
+            
+    print(f"Using the diva directory located at {megamix_path}")
 
     if not modloader_is_installed(megamix_path):
         menu = TerminalMenu(["Yes", "No"],
@@ -199,6 +223,8 @@ def main():
     base_options = [
         ("Install new mods", menu_install),
         ("Manage existing mods", menu_manage),
+        ("Edit d4m config", edit_d4m_config),
+        ("Migrate from DivaModManager", migrate_from_dmm),
         ("Run Project Diva", lambda *_: subprocess.run([f"xdg-open", "steam://run/{MEGAMIX_APPID}"]))
     ]
 

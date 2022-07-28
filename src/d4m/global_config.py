@@ -6,7 +6,6 @@ import d4m.common
 CONFIG_PATH = os.path.join(appdirs.user_config_dir(), "d4m.toml")
 
 CONFIG_OPTIONS = [
-    ("diva_path", d4m.common.get_megamix_path()),
     ("last_d4m_update_check", 0),
     ("last_dmm_update_check", 0),
 ]
@@ -37,4 +36,8 @@ class D4mConfig:
             toml.dump(self.data, conf_fd)
 
     def get_diva_path(self):
-        return self.data["diva_path"]
+        if "D4M_INSTALL_DIR" in os.environ:
+            return os.environ["D4M_INSTALL_DIR"]
+
+        return self.data.get("diva_path", d4m.common.get_megamix_path())
+        
