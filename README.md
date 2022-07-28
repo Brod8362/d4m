@@ -13,9 +13,11 @@ Features
 - Automatically determine game install directory
 - Install and update DivaModLoader
 - Easily enable/disable mods
-- Search and Install mods from [GameBanana](https://gamebanana.com/games/16522)
+- Search and Install mods from [GameBanana](https://gamebanana.com/games/16522) and [DivaModArchive](https://divamodarchive.xyz/)
 - Install mods from a local archive (.7z,.rar,.zip, etc)
 - Update installed mods easily
+- Migrate metadata from DivaModManager
+- Automatic self-update checking
 - TUI or GUI: your choice! (TUI is Linux only)
 
 Installation
@@ -25,13 +27,13 @@ Requirements: `python >= 3.8`, `libarchive`
 
 ### Linux
 
+[d4m is now available in the AUR!](https://aur.archlinux.org/packages/d4m-git)
+
 Before installing `d4m`, you first need to install libarchive.
 
 For Ubuntu, this can be installed with
 
 `sudo apt install libarchive-dev`
-
-For Arch Linux (e.g Steam Deck), libarchive should already be installed.
 
 After installing libarchive, install `d4m` via pip:
 
@@ -68,16 +70,21 @@ python -m pip install -e .
 Running
 =======
 
-Linux/Windows (via pip)
+Linux (via pip)
 -----
 
-`python -m d4m` (TUI)
+`d4m` (TUI)
 
-`python -m d4m -g` (GUI)
+`d4m-gui` (GUI)
 
-You can place an alias in your shell config, e.g `~/.bashrc` or `~/.zshrc`
+Linux (via AUR or Flatpak)
+--------------------------
 
-> `alias d4m='python -m d4m'`
+`d4m` should have been added as a desktop entry. This will run the GUI.
+
+For AUR, you can also use the `d4m` or `d4m-gui` commands.
+
+If you're having issues with the Flatpak or AUR distributions, [please open an issue.](https://github.com/Brod8362/d4m/issues/new/choose)
 
 Demo (TUI)
 -------

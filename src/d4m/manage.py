@@ -8,8 +8,10 @@ from d4m.divamod import DivaMod, DivaSimpleMod, UnmanageableModError, diva_mod_c
 import d4m.api as api
 import tempfile
 import shutil
+import libarchive.public
 import toml
 
+from traceback import print_exc
 
 class ModManager:
     def __init__(self, base_path, mods_path=None):
@@ -44,10 +46,10 @@ class ModManager:
     def disable(self, mod: DivaMod):
         mod.disable()
 
-    def update(self, mod: DivaMod):
+    def update(self, mod: DivaMod, fetch_thumbnail=False):
         if not mod.is_simple():
             self.delete_mod(mod)
-            self.install_mod(mod.id)
+            self.install_mod(mod.id, fetch_thumbnail=fetch_thumbnail, origin=mod.origin)
 
     def is_enabled(self, mod: DivaMod):
         return mod.enabled
@@ -58,7 +60,7 @@ class ModManager:
 
     def fetch_thumbnail(self, mod: DivaMod, force=False):
         if force or not mod.has_thumbnail():
-            data = api.fetch_mod_data(mod.id)
+            data = api.fetch_mod_data(mod.id, origin=mod.origin)
             img_url = data["image"]
             resp = requests.get(img_url)
             if resp.status_code == 200:
@@ -81,35 +83,38 @@ class ModManager:
                 new_mod = diva_mod_create(mod_folder)
                 self.mods.append(new_mod)
 
-    def install_mod(self, mod_id: int, fetch_thumbnail=False):  # mod_id and hash are used for modinfo.toml
-        data = api.fetch_mod_data(mod_id)
+    def install_mod(self, mod_id: int, fetch_thumbnail=False, origin="gamebanana"):  # mod_id and hash are used for modinfo.toml
+        data = api.fetch_mod_data(mod_id, origin=origin)
         with tempfile.TemporaryDirectory(suffix="-d4m") as tempdir:
             api.download_and_extract_mod(data["download"], tempdir)
             extracted = os.listdir(tempdir)
             if "config.toml" in extracted:
-                shutil.move(tempdir, os.path.join(self.mods_path, mod_id))
+                mod_folder_name = os.path.join(self.mods_path, str(mod_id)) #TODO: move it to a folder using the mod's name
+                shutil.move(tempdir, mod_folder_name)
             elif len(extracted) == 1:
                 mod_folder_name = os.path.join(self.mods_path, extracted[0])
                 shutil.move(os.path.join(tempdir, extracted[0]), mod_folder_name)
-                with open(os.path.join(mod_folder_name, "modinfo.toml"), "w") as modinfo_fd:
-                    data = {
-                        "id": mod_id,
-                        "hash": data["hash"]
-                    }
-                    toml.dump(data, modinfo_fd)
-                new_mod = diva_mod_create(mod_folder_name)
-
-                self.mods.append(new_mod)
-
-                # download mod thumbnail
-                if fetch_thumbnail:
-                    self.fetch_thumbnail(new_mod)
             else:
                 raise RuntimeError("Failed to install mod: archive directory unusable")
+            with open(os.path.join(mod_folder_name, "modinfo.toml"), "w") as modinfo_fd:
+                data = {
+                    "id": mod_id,
+                    "hash": data["hash"],
+                    "origin": origin
+                }
+                toml.dump(data, modinfo_fd)
+            new_mod = diva_mod_create(mod_folder_name)
+
+            self.mods.append(new_mod)
+
+            # download mod thumbnail
+            if fetch_thumbnail:
+                self.fetch_thumbnail(new_mod)
 
     def check_for_updates(self, get_thumbnails=False):
-        ids = [x.id for x in self.mods if not x.is_simple()]
-        api.multi_fetch_mod_data(ids)
+        for origin in api.SUPPORTED_APIS.keys():
+            mods_from_origin = self.mods_from(origin)
+            api.multi_fetch_mod_data(set(map(lambda x: x.id, mods_from_origin)), origin=origin)
         if get_thumbnails:
             for mod in self.mods:
                 if not mod.is_simple():
@@ -118,9 +123,13 @@ class ModManager:
                     except Exception as e:
                         print(f"failed to get thumbnail {e}")
 
-    def mod_is_installed(self, s_id) -> bool:
+    def mods_from(self, origin):
+        """Return a list of mods from a specified origin."""
+        return [m for m in self.mods if not m.is_simple() and m.origin == origin]
+
+    def mod_is_installed(self, s_id, origin = "gamebanana") -> bool:
         for mod in self.mods:
-            if not mod.is_simple() and mod.id == s_id:
+            if not mod.is_simple() and mod.id == s_id and mod.origin == origin:
                 return True
         return False
 
@@ -129,7 +138,36 @@ class ModManager:
 
 
 def load_mods(path: str) -> "list[DivaSimpleMod]":
-    return [diva_mod_create(os.path.join(path, mod_path)) for mod_path in os.listdir(path)]
+    loaded = []
+    for mod_path in os.listdir(path):
+        full_mod_path = os.path.join(path, mod_path)
+        if os.path.isdir(full_mod_path):
+            try:
+                loaded.append(diva_mod_create(full_mod_path))
+            except:
+                print_exc()
+    return loaded
+
+def extract_archive(archive: bytes, extract_to: str) -> None:
+    try:
+        with libarchive.public.memory_reader(archive) as la:
+            for entry in la:
+                if entry.filetype.IFDIR:
+                    os.makedirs(os.path.join(extract_to, entry.pathname), exist_ok=True)
+                else:
+                    dest = os.path.join(extract_to, entry.pathname)
+                    os.makedirs(os.path.dirname(dest), exist_ok=True)
+                    with open(os.path.join(extract_to, entry.pathname), "xb") as fd:
+                        for block in entry.get_blocks():
+                            fd.write(block)
+
+    except Exception as e:
+        if isinstance(e, RuntimeError):
+            raise e
+        else:
+            print_exc()
+            raise RuntimeError(f"libarchive error {e}")  # TODO: there's probably a better exception for this
+
 
 
 def install_modloader(diva_path: str):
