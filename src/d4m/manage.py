@@ -89,26 +89,27 @@ class ModManager:
             api.download_and_extract_mod(data["download"], tempdir)
             extracted = os.listdir(tempdir)
             if "config.toml" in extracted:
-                shutil.move(tempdir, os.path.join(self.mods_path, mod_id))
+                mod_folder_name = os.path.join(self.mods_path, str(mod_id)) #TODO: move it to a folder using the mod's name
+                shutil.move(tempdir, mod_folder_name)
             elif len(extracted) == 1:
                 mod_folder_name = os.path.join(self.mods_path, extracted[0])
                 shutil.move(os.path.join(tempdir, extracted[0]), mod_folder_name)
-                with open(os.path.join(mod_folder_name, "modinfo.toml"), "w") as modinfo_fd:
-                    data = {
-                        "id": mod_id,
-                        "hash": data["hash"],
-                        "origin": origin
-                    }
-                    toml.dump(data, modinfo_fd)
-                new_mod = diva_mod_create(mod_folder_name)
-
-                self.mods.append(new_mod)
-
-                # download mod thumbnail
-                if fetch_thumbnail:
-                    self.fetch_thumbnail(new_mod)
             else:
                 raise RuntimeError("Failed to install mod: archive directory unusable")
+            with open(os.path.join(mod_folder_name, "modinfo.toml"), "w") as modinfo_fd:
+                data = {
+                    "id": mod_id,
+                    "hash": data["hash"],
+                    "origin": origin
+                }
+                toml.dump(data, modinfo_fd)
+            new_mod = diva_mod_create(mod_folder_name)
+
+            self.mods.append(new_mod)
+
+            # download mod thumbnail
+            if fetch_thumbnail:
+                self.fetch_thumbnail(new_mod)
 
     def check_for_updates(self, get_thumbnails=False):
         for origin in api.SUPPORTED_APIS.keys():
