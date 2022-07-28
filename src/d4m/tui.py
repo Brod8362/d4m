@@ -127,6 +127,25 @@ def edit_d4m_config(*args):
     editor = os.environ.get("EDITOR", "nano")
     subprocess.run([editor, os.path.expanduser("~/.config/d4m.toml")])
 
+def migrate_from_dmm(mod_manager: ModManager):
+    attempted = 0
+    successful = 0
+    for mod in mod_manager.mods:
+        if mod.is_simple() and mod.can_attempt_dmm_migration():
+            print(f"Attempting to migrate {mod.name}...")
+            attempted+=1
+            res = mod.attempt_migrate_from_dmm()
+            if res:
+                print(f"{colorama.Fore.GREEN}Successfully migrated {mod.name}.{colorama.Fore.RESET}")
+                successful+=1
+            else:
+                print(f"{colorama.Fore.RED}Couldn't migrate {mod.name}{colorama.Fore.RESET}")
+    if attempted > 0:
+        print(f"Attempted to migrate {attempted} mods, {successful} successful.")
+    else:
+        print(f"No mods elgibile for migration.")
+    mod_manager.reload()
+
 def main():
     print(f"d4m v{VERSION}")
 
@@ -201,6 +220,7 @@ def main():
         ("Install new mods", menu_install),
         ("Manage existing mods", menu_manage),
         ("Edit d4m config", edit_d4m_config),
+        ("Migrate from DivaModManager", migrate_from_dmm),
         ("Run Project Diva", lambda *_: subprocess.run([f"xdg-open", "steam://run/{MEGAMIX_APPID}"]))
     ]
 

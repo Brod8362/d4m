@@ -3,6 +3,7 @@ import toml
 import packaging.version
 import d4m.api as api
 import functools
+import json
 
 
 class UnmanageableModError(ValueError):
@@ -63,6 +64,33 @@ class DivaSimpleMod:
         else:
             None
 
+    def can_attempt_dmm_migration(self) -> bool:
+        return os.path.exists(os.path.join(self.path, "mod.json"))
+
+    def attempt_migrate_from_dmm(self) -> bool:
+        """Attempt to use dmm's mod.json file to get meqtadata."""
+        try:
+            with open(os.path.join(self.path, "mod.json"), "r") as dmm_fd:
+                dmm_data = json.load(dmm_fd)
+                if "homepage" in dmm_data:
+                    homepage = dmm_data["homepage"]
+                    if "gamebanana" in homepage:
+                        potential_id = homepage.split("/")[-1]
+                        try:
+                            api.fetch_mod_data(potential_id)
+                            with open(os.path.join(self.path, "modinfo.toml"), "w") as d4m_fd:
+                                d4m_mod_data = {
+                                    "id": potential_id,
+                                    "hash": "no-hash"
+                                }
+                                toml.dump(d4m_mod_data, d4m_fd)
+                                return True
+                        except:
+                            return False
+        except:
+            return False
+        return False
+
     def is_simple(self):
         return True
 
@@ -86,6 +114,9 @@ class DivaMod(DivaSimpleMod):
         return type(self) == type(other) and self.id == other.id
 
     def is_simple(self):
+        return False
+
+    def can_attempt_dmm_migration(self) -> bool:
         return False
 
     @functools.cached_property
