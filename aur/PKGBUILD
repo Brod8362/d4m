@@ -35,7 +35,6 @@ pkgver() {
 
 build() {
     cd "$srcdir/$pkgname"
-	git checkout aur
     python -m build --no-isolation
 }
 
