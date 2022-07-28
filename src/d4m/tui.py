@@ -137,20 +137,19 @@ def main():
             print(
                 f"{colorama.Fore.YELLOW}A new version of d4m is available. Please update via\n\tpip install d4m=={d4m_latest}{colorama.Fore.RESET}")
 
-    megamix_path = os.environ.get("D4M_INSTALL_DIR", d4m_config.get_diva_path())
-
-    if not megamix_path or not os.path.exists(megamix_path):
-        print("Project Diva MegaMix+ does not appear to be installed.", file=sys.stderr)
-        if megamix_path:
-            print(f"Expected it to be at {megamix_path!r} but it is not there.", file=sys.stderr)
-        if "D4M_INSTALL_DIR" not in os.environ:
-            print("This tool uses Steam's library path to figure out where the installation should be.",
-                  file=sys.stderr)
-            print("Override the D4M_INSTALL_DIR environment variable to set this path manually.", file=sys.stderr)
-        elif os.environ.get("D4M_INSTALL_DIR") == "":
-            print("You have D4M_INSTALL_DIR set, but it is an empty string,"
-                  " which is overriding this tool's normal search routine.", file=sys.stderr)
-        sys.exit(1)
+    try:
+        megamix_path = d4m_config.get_diva_path()
+    except:
+        menu = TerminalMenu(["Yes", "No"], title=f"Couldn't determine diva install dir. Would you like to edit the d4m config file?")
+        r = menu.show()
+        if r == 0:
+            editor = os.environ.get("EDITOR", "nano")
+            subprocess.run([editor, os.path.expanduser("~/.config/d4m.toml")])
+            sys.exit(0)
+        else:
+            sys.exit(1)
+            
+    print(f"Using the diva directory located at {megamix_path}")
 
     if not modloader_is_installed(megamix_path):
         menu = TerminalMenu(["Yes", "No"],
