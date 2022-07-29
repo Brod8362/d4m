@@ -614,7 +614,6 @@ class D4mGUI:
         main_widget.addLayout(mod_buttons)
 
         main_window.setMinimumSize(950, 500)
-        main_window.setMaximumSize(1000, 1500)
         main_window.show()
         sys.exit(qapp.exec())
 
