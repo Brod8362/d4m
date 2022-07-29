@@ -71,7 +71,7 @@ class ModManager:
     def install_from_archive(self, archive_path: str):
         with open(archive_path, "rb") as arch_fd:
             with tempfile.TemporaryDirectory(suffix="d4m") as tempdir:
-                api.extract_archive(arch_fd.read(), tempdir)
+                extract_archive(arch_fd.read(), tempdir)
                 extracted = os.listdir(tempdir)
                 if "config.toml" in extracted:
                     mod_folder = os.path.basename(archive_path)
