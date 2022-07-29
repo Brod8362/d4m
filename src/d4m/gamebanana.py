@@ -89,11 +89,17 @@ def search_mods(query: str):
 
     j = resp.json()
 
-    def map_name(ers):
-        mod_id = ers["_idRow"]
-        return mod_id, f"{ers['_sName']} by {ers['_aSubmitter']['_sName']}"
+    def map_mod(ers):
+        obj = {
+            "name": ers['_sName'],
+            "id": ers['_idRow'],
+            "author": ers['_aSubmitter']['_sName'],
+            "category": ers['_sModelName'],
+            "origin": "gamebanana"
+        }
+        return obj
 
-    return list(map(map_name, j))
+    return list(map(map_mod, j))
 
 def download_mod(mod_id: int = None, download_path: str = None) -> bytes:
     effective_download = download_path

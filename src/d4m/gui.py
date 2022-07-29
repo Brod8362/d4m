@@ -257,20 +257,20 @@ class ModInstallDialog(qwidgets.QDialog):
                 results = []
                 self.progress_bar.setRange(0, 5)
                 self.progress_bar.setValue(1)
+
                 if self.checkbox_search_gb.isChecked():
                     gb_results = d4m.api.search_mods(self.mod_name_input.text(), origin="gamebanana")
-                    for e in gb_results:
-                        results.append((e[0], e[1], "gamebanana"))
+                    results.extend(gb_results)
                     self.progress_bar.setValue(2)
-                    d4m.api.multi_fetch_mod_data(list(map(lambda e: e[0], gb_results)), origin="gamebanana")
+                    d4m.api.multi_fetch_mod_data([x["id"] for x in gb_results], origin="gamebanana")
 
                 if self.checkbox_search_dma.isChecked():
                     self.progress_bar.setValue(3)
                     dma_results = d4m.api.search_mods(self.mod_name_input.text(), origin="divamodarchive")
-                    for e in dma_results:
-                        results.append((e[0], e[1], "divamodarchive"))
+                    results.extend(dma_results)
                     self.progress_bar.setValue(4)
-                    d4m.api.multi_fetch_mod_data(list(map(lambda e: e[0], dma_results)), origin="divamodarchive")
+                    d4m.api.multi_fetch_mod_data([x["id"] for x in dma_results], origin="divamodarchive")
+
             except RuntimeError as e:
                 self.status_label.setText(f"Err: <strong color=red>{e}</strong>")
                 return
@@ -289,14 +289,14 @@ class ModInstallDialog(qwidgets.QDialog):
             self.found_mod_list.setSelectionBehavior(qwidgets.QAbstractItemView.SelectionBehavior.SelectRows)
             self.found_mod_list.horizontalHeader().setStretchLastSection(True)
             self.found_mod_list.setRowCount(len(results))
-            for index, (m_id, m_name, m_origin) in enumerate(results):
-                detailed_mod_info = d4m.api.fetch_mod_data(m_id, origin=m_origin)  # should already be fetched and cached, no performance concerns here
-                mod_label = qwidgets.QTableWidgetItem(m_name)
-                mod_label.setToolTip(m_name)
-                mod_origin = qwidgets.QTableWidgetItem(m_origin)
-                mod_id_label = qwidgets.QTableWidgetItem(str(m_id))
+            for index, mod_info in enumerate(results):
+                detailed_mod_info = d4m.api.fetch_mod_data(mod_info["id"], origin=mod_info["origin"])  # should already be fetched and cached, no performance concerns here
+                mod_label = qwidgets.QTableWidgetItem(mod_info["name"])
+                mod_label.setToolTip(mod_info["name"])
+                mod_origin = qwidgets.QTableWidgetItem(mod_info["origin"])
+                mod_id_label = qwidgets.QTableWidgetItem(str(mod_info["id"]))
                 status = "Available"
-                if mod_manager.mod_is_installed(m_id, origin=m_origin):
+                if mod_manager.mod_is_installed(mod_info["id"], origin=mod_info["origin"]):
                     status = "Installed"
                 if detailed_mod_info["hash"] == "err":
                     status = "Unavailable (Error)"

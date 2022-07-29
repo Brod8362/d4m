@@ -38,8 +38,8 @@ def generate_preview(mod_str: str, mod_manager: ModManager):
 
 def menu_install(mod_manager: ModManager):
     search_str = input("Search for a mod...:")
-    gb_mods = list(map(lambda t: (t[0], t[1], "gamebanana"), api.search_mods(search_str, origin = "gamebanana")))
-    dma_mods = list(map(lambda t: (t[0], t[1], "divamodarchive"), api.search_mods(search_str, origin = "divamodarchive")))
+    gb_mods =  api.search_mods(search_str, origin = "gamebanana")
+    dma_mods = api.search_mods(search_str, origin = "divamodarchive")
     found_mods = gb_mods + dma_mods
     installed_ids = [mod.id for mod in mod_manager.mods if not mod.is_simple()]
     if not found_mods:
@@ -48,8 +48,10 @@ def menu_install(mod_manager: ModManager):
         options = ["Cancel"]
 
         def mod_str_gen(m_t):
-            content = m_t[1].strip().replace("\n", "")+f" [{m_t[2]}]"
-            if m_t[0] in installed_ids:
+            mod_name = m_t["name"].strip().replace("\n", "")
+            mod_author = m_t["author"].strip().replace("\n", "")
+            content = f"{mod_name} by {mod_author} [{m_t['origin']}]"
+            if m_t['id'] in installed_ids:
                 return f"(installed) {content}"
             return content
 
@@ -58,15 +60,15 @@ def menu_install(mod_manager: ModManager):
         choice = mod_search_menu.show()
         if 0 < choice < len(options):
             mod = found_mods[choice - 1]
-            if mod[0] in installed_ids:
-                print(f"{mod[1]} is already installed.")
+            if mod["id"] in installed_ids:
+                print(f"{mod['name']} is already installed.")
             else:
                 try:
-                    print(f"Installing {mod[1]} ({mod[0]})")
-                    mod_manager.install_mod(mod[0], origin=mod[2])
-                    print(f"{colorama.Fore.GREEN}Installed {mod[1]}{colorama.Fore.RESET}")
+                    print(f"Installing {mod['name']} ({mod['id']})")
+                    mod_manager.install_mod(mod['id'], origin=mod['origin'])
+                    print(f"{colorama.Fore.GREEN}Installed {mod['name']}{colorama.Fore.RESET}")
                 except Exception as e:
-                    print(f"{colorama.Fore.RED}Failed to install {mod[1]} {colorama.Fore.RESET}({e})")
+                    print(f"{colorama.Fore.RED}Failed to install {mod['name']}{colorama.Fore.RESET}({e})")
                     print_exc()
 
 

@@ -44,7 +44,7 @@ def search_mods(query: str, origin = "gamebanana") -> "list[tuple[any,any]]":
         query: string to match against
         origin: origin API to use (defualt: gamebanana)
         
-    Returns: a list of tuples in the format (id, mod_name)"""
+    Returns: a list of dicts with the keys name, id, author, category, and origin."""
     if origin not in SUPPORTED_APIS.keys():
         raise UnsupportedAPIError(origin)
     return SUPPORTED_APIS[origin].search_mods(query)

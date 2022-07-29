@@ -78,7 +78,17 @@ def search_mods(query: str):
 
     j = resp.json()
 
-    return list(map(lambda e: (e["id"], e["name"]), j))
+    def map_mod(e):
+        obj = {
+            "name": e["name"],
+            "id": e["id"],
+            "author": e["user"]["name"],
+            "category": e["type_tag"],
+            "origin": "divamodarchive"
+        }
+        return obj
+
+    return list(map(map_mod, j))
 
 def download_mod(mod_id: int = None, download_url: str = None) -> bytes:
     effective_download = download_url
