@@ -7,10 +7,11 @@ DMA_GET_BY_ID_BULK = "/posts/posts"
 
 mod_info_cache = {}
 
-def multi_fetch_mod_data(mod_ids: "list[int]") -> "list[dict]":
+
+def multi_fetch_mod_data(mod_info: "list[tuple[int, str]]") -> "list[dict]":
     mod_data = []
     need_fetch = []
-    for mod_id in mod_ids:
+    for (mod_id, _) in mod_info:
         if mod_id in mod_info_cache:
             mod_data.append(mod_info_cache[mod_id])
         else:
@@ -19,7 +20,7 @@ def multi_fetch_mod_data(mod_ids: "list[int]") -> "list[dict]":
     if len(need_fetch) > 0:
         resp = requests.get(
             DMA_BASE_DOMAIN + DMA_GET_BY_ID_BULK,
-            params = [("post_id", i) for i in need_fetch]
+            params=[("post_id", i) for i in need_fetch]
         )
         if resp.status_code != 200:
             raise RuntimeError(f"DMA info returned {resp.status_code}")
@@ -34,13 +35,14 @@ def multi_fetch_mod_data(mod_ids: "list[int]") -> "list[dict]":
                 "download_count": post["downloads"],
                 "like_count": post["likes"]
             }
-            mod_info_cache[mod_id] = obj
+            mod_info_cache[post["id"]] = obj
             mod_data.append(obj)
 
     return mod_data
-        
 
-def fetch_mod_data(mod_id: int) -> "dict":
+
+# category is not used for diva mod archive
+def fetch_mod_data(mod_id: int, _category: str) -> "dict":
     if mod_id in mod_info_cache:
         return mod_info_cache[mod_id]
 
@@ -63,10 +65,11 @@ def fetch_mod_data(mod_id: int) -> "dict":
     mod_info_cache[mod_id] = obj
     return obj
 
+
 def search_mods(query: str):
     resp = requests.get(
         DMA_BASE_DOMAIN + DMA_SEARCH,
-        params = {
+        params={
             "name": query,
             "game_tag": 0
         }
@@ -89,12 +92,3 @@ def search_mods(query: str):
         return obj
 
     return list(map(map_mod, j))
-
-def download_mod(mod_id: int = None, download_url: str = None) -> bytes:
-    effective_download = download_url
-    if mod_id is not None:
-        modinfo = fetch_mod_data(mod_id)
-        effective_download = modinfo["download"]
-    if not effective_download:
-        raise ValueError("(DMA) Failed to download mod: invalid args")
-    

@@ -8,23 +8,26 @@ SUPPORTED_APIS = {
     "gamebanana": gamebanana
 }
 
+
 class UnsupportedAPIError(Exception):
     pass
 
-def multi_fetch_mod_data(mod_ids: "list[int]", origin = "gamebanana") -> "list[dict]":
+
+def multi_fetch_mod_data(mod_info: "list[tuple[int, str]]", origin="gamebanana") -> "list[dict]":
     """Fetch data for multiple mods from the requested origin.
 
     Params:
-        mod_id - list of mod ids to request data for
+        mod_info - list of tuples with the first value being the mod id and the second value being the mod category.
         origin - origin API to use (default: gamebanana)
 
     Returns: a list of dicts with the keys id, hash, image, download, download_count, like_count
     """
     if origin not in SUPPORTED_APIS.keys():
         raise UnsupportedAPIError(origin)
-    return SUPPORTED_APIS[origin].multi_fetch_mod_data(mod_ids)
+    return SUPPORTED_APIS[origin].multi_fetch_mod_data(mod_info)
 
-def fetch_mod_data(mod_id: int, origin = "gamebanana") -> "dict":
+
+def fetch_mod_data(mod_id: int, category: str, origin: str = "gamebanana") -> "dict":
     """Fetch data for a mod from the requested origin.
 
     Params:
@@ -35,9 +38,10 @@ def fetch_mod_data(mod_id: int, origin = "gamebanana") -> "dict":
     """
     if origin not in SUPPORTED_APIS.keys():
         raise UnsupportedAPIError(origin)
-    return SUPPORTED_APIS[origin].fetch_mod_data(mod_id)
+    return SUPPORTED_APIS[origin].fetch_mod_data(mod_id, category)
 
-def search_mods(query: str, origin = "gamebanana") -> "list[tuple[any,any]]":
+
+def search_mods(query: str, origin: str = "gamebanana") -> "list[tuple[any,any]]":
     """Search for mods matching `query` on the requested origin.
     
     Params:

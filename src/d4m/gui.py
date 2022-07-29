@@ -231,16 +231,16 @@ class ModInstallDialog(qwidgets.QDialog):
             self.progress_bar.setValue(0)
             self.status_label.setText(f"Preparing to install {len(selected_ids)} mod(s)")
             success = 0
-            for index, (mod_id, mod_name, mod_origin) in enumerate(selected_ids):
-                text = f"<strong>{index + 1}/{len(selected_ids)}... Installing mod {mod_name} "
+            for index, mod_info in enumerate(selected_ids):
+                text = f"<strong>{index + 1}/{len(selected_ids)}... Installing mod {mod_info['name']} "
                 self.status_label.setText(text)
-                if not mod_manager.mod_is_installed(mod_id, origin=mod_origin):
+                if not mod_manager.mod_is_installed(mod_info["id"], origin=mod_info["origin"]):
                     try:
-                        mod_manager.install_mod(mod_id, fetch_thumbnail=True, origin=mod_origin)
+                        mod_manager.install_mod(mod_info["id"], mod_info["category"], fetch_thumbnail=True, origin=mod_info["origin"])
                         success += 1
                     except Exception as e:
                         print_exc()
-                        r = f"Failed to install {mod_name}: {e}"
+                        r = f"Failed to install {mod_info['origin']}: {e}"
                         self.status_label.setText(text)
                         log_msg(r)
                     self.progress_bar.setValue(index + 1)
@@ -262,14 +262,14 @@ class ModInstallDialog(qwidgets.QDialog):
                     gb_results = d4m.api.search_mods(self.mod_name_input.text(), origin="gamebanana")
                     results.extend(gb_results)
                     self.progress_bar.setValue(2)
-                    d4m.api.multi_fetch_mod_data([x["id"] for x in gb_results], origin="gamebanana")
+                    d4m.api.multi_fetch_mod_data([(x["id"], x["category"]) for x in gb_results], origin="gamebanana")
 
                 if self.checkbox_search_dma.isChecked():
                     self.progress_bar.setValue(3)
                     dma_results = d4m.api.search_mods(self.mod_name_input.text(), origin="divamodarchive")
                     results.extend(dma_results)
                     self.progress_bar.setValue(4)
-                    d4m.api.multi_fetch_mod_data([x["id"] for x in dma_results], origin="divamodarchive")
+                    d4m.api.multi_fetch_mod_data([(x["id"], x["category"]) for x in dma_results], origin="divamodarchive")
 
             except RuntimeError as e:
                 self.status_label.setText(f"Err: <strong color=red>{e}</strong>")
@@ -290,7 +290,7 @@ class ModInstallDialog(qwidgets.QDialog):
             self.found_mod_list.horizontalHeader().setStretchLastSection(True)
             self.found_mod_list.setRowCount(len(results))
             for index, mod_info in enumerate(results):
-                detailed_mod_info = d4m.api.fetch_mod_data(mod_info["id"], origin=mod_info["origin"])  # should already be fetched and cached, no performance concerns here
+                detailed_mod_info = d4m.api.fetch_mod_data(mod_info["id"], mod_info["category"], origin=mod_info["origin"])  # should already be fetched and cached, no performance concerns here
                 mod_label = qwidgets.QTableWidgetItem(mod_info["name"])
                 mod_label.setToolTip(mod_info["name"])
                 mod_origin = qwidgets.QTableWidgetItem(mod_info["origin"])
