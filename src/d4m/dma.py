@@ -92,3 +92,10 @@ def search_mods(query: str):
         return obj
 
     return list(map(map_mod, j))
+
+
+def download_favicon():
+    r = requests.get("https://divamodarchive.xyz/favicon.ico")
+    if r.status_code != 200:
+        return None
+    return r.content

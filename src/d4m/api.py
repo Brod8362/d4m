@@ -1,3 +1,5 @@
+import functools
+
 import d4m.gamebanana as gamebanana
 import d4m.dma as dma
 import d4m.manage
@@ -62,3 +64,14 @@ def download_and_extract_mod(download_url: str, destination: str):
     if resp.status_code != 200:
         raise RuntimeError(f"Failed to download mod from {download_url}")
     d4m.manage.extract_archive(resp.content, destination)
+
+
+@functools.lru_cache(maxsize=10)
+def download_favicon(origin: str) -> bytes:
+    """Download this API's favicon.
+
+    Returns: bytes representing the favicon, or None.
+    """
+    if origin not in SUPPORTED_APIS.keys():
+        raise UnsupportedAPIError(origin)
+    return SUPPORTED_APIS[origin].download_favicon()

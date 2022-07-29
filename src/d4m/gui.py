@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import functools
 import os
 import subprocess
 import sys
@@ -21,6 +22,23 @@ from d4m.global_config import D4mConfig
 
 LOG_HISTORY = []
 
+FAVICONS = {
+    "divamodarchive": d4m.api.download_favicon("divamodarchive"),
+    "gamebanana": d4m.api.download_favicon("gamebanana")
+}
+
+@functools.lru_cache(maxsize=10)
+def favicon_qimage(origin):
+    img_bytes = FAVICONS.get(origin, None)
+    if img_bytes:
+        try:
+            img = QImage()
+            img.loadFromData(img_bytes)
+            return img.scaled(16, 16)
+        except:
+            return None
+    else:
+        return None
 
 def log_msg(content: str):
     timestamp = strftime("%H:%M:%S")
@@ -281,8 +299,8 @@ class ModInstallDialog(qwidgets.QDialog):
             self.status_label.setText(
                 f"Found <strong>{len(results)}</strong> mod(s) matching <em>{self.mod_name_input.text()}</em>")
             self.found_mod_list.clear()
-            self.found_mod_list.setColumnCount(5)
-            self.found_mod_list.setHorizontalHeaderLabels(["Mod", "Origin", "Mod ID", "Info", "Status"])
+            self.found_mod_list.setColumnCount(4)
+            self.found_mod_list.setHorizontalHeaderLabels(["Mod", "Mod ID", "Info", "Status"])
             self.found_mod_list.horizontalHeader().setSectionResizeMode(0,
                                                                         qwidgets.QHeaderView.ResizeMode.ResizeToContents)
             self.found_mod_list.setEditTriggers(qwidgets.QAbstractItemView.NoEditTriggers)
@@ -293,8 +311,12 @@ class ModInstallDialog(qwidgets.QDialog):
                 detailed_mod_info = d4m.api.fetch_mod_data(mod_info["id"], mod_info["category"], origin=mod_info["origin"])  # should already be fetched and cached, no performance concerns here
                 mod_label = qwidgets.QTableWidgetItem(mod_info["name"])
                 mod_label.setToolTip(mod_info["name"])
-                mod_origin = qwidgets.QTableWidgetItem(mod_info["origin"])
                 mod_id_label = qwidgets.QTableWidgetItem(str(mod_info["id"]))
+
+                fav = favicon_qimage(mod_info["origin"])
+                if fav:
+                    mod_id_label.setData(PySide6.QtCore.Qt.DecorationRole, fav)
+
                 status = "Available"
                 if mod_manager.mod_is_installed(mod_info["id"], origin=mod_info["origin"]):
                     status = "Installed"
@@ -303,10 +325,9 @@ class ModInstallDialog(qwidgets.QDialog):
                 mod_installed_label = qwidgets.QTableWidgetItem(status)
                 mod_info_label = qwidgets.QTableWidgetItem(f"❤️{detailed_mod_info['like_count']} ⬇️{detailed_mod_info['download_count']}")
                 self.found_mod_list.setItem(index, 0, mod_label)
-                self.found_mod_list.setItem(index, 1, mod_origin) 
-                self.found_mod_list.setItem(index, 2, mod_id_label)
-                self.found_mod_list.setItem(index, 3, mod_info_label)
-                self.found_mod_list.setItem(index, 4, mod_installed_label)
+                self.found_mod_list.setItem(index, 1, mod_id_label)
+                self.found_mod_list.setItem(index, 2, mod_info_label)
+                self.found_mod_list.setItem(index, 3, mod_installed_label)
             if len(results) > 0:
                 self.install_button.setEnabled(True)
                 self.install_button.clicked.connect(lambda *_: on_install_click(results))
@@ -473,7 +494,7 @@ class D4mGUI:
         image_thumbnail_cache = {}
 
         ### Propogate mod list
-        mod_table.setColumnCount(8)  # thumbnail, image, name, creator, version, id, size
+        mod_table.setColumnCount(7)  # thumbnail, image, name, creator, version, id, size
 
         def populate_modlist(update_check=True):
             mod_table.clear()
@@ -481,7 +502,7 @@ class D4mGUI:
             mod_table.setEditTriggers(qwidgets.QAbstractItemView.NoEditTriggers)
             mod_table.setHorizontalHeaderLabels(
                 ["Thumbnail", "Mod Name", "Enabled",
-                 "Mod Author(s)", "Mod Version", "Origin", "Mod ID",
+                 "Mod Author(s)", "Mod Version", "Mod ID",
                  "Size"]
             )
             mod_table.horizontalHeader().setSectionResizeMode(0, qwidgets.QHeaderView.ResizeMode.ResizeToContents)
@@ -521,19 +542,20 @@ class D4mGUI:
                     if update_check and mod.is_out_of_date():
                         mod_version.setBackground(QColor.fromRgb(255, 255, 0))
                         mod_version.setToolTip("A new version is available.")
-                    url = f"https://gamebanana.com/mods/{mod.id}"
-                    # mod_id = qwidgets.QTableWidgetItem(f"<a href=\"{url}\">{mod.id}</a>")
-                    # TODO: how to embed URL in table?
+
                     mod_id = qwidgets.QTableWidgetItem(str(mod.id))
-                    mod_origin = qwidgets.QTableWidgetItem(mod.origin)
-                    mod_table.setItem(index, 5, mod_origin)
-                    mod_table.setItem(index, 6, mod_id)
+
+                    fav = favicon_qimage(mod.origin) # apply favicon if available
+                    if fav is not None:
+                        mod_id.setData(PySide6.QtCore.Qt.DecorationRole, fav)
+
+                    mod_table.setItem(index, 5, mod_id)
                 mod_table.setItem(index, 0, mod_image)
                 mod_table.setItem(index, 1, mod_name)
                 mod_table.setItem(index, 2, mod_enabled)
                 mod_table.setItem(index, 3, mod_author)
                 mod_table.setItem(index, 4, mod_version)
-                mod_table.setItem(index, 7, mod_size)
+                mod_table.setItem(index, 6, mod_size)
                 enabled_mod_count = sum(1 for m in mod_manager.mods if m.enabled)
                 mod_count_label.setText(f"{len(mod_manager.mods)} mod(s) / {enabled_mod_count} enabled")
 
