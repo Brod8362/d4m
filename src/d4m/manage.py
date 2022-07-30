@@ -23,7 +23,7 @@ class ModManager:
             self.enabled = data["enabled"]
             if not mods_path:
                 mods_path = data.get("mods", "mods")
-        self.mods = load_mods(mods_path)
+        self.mods = self.load_mods(mods_path)
 
     def disable_dml(self):
         with open(os.path.join(self.base_path, "config.toml"), "r") as conf_fd:
@@ -138,20 +138,38 @@ class ModManager:
         return False
 
     def reload(self):
-        self.mods = load_mods(self.mods_path)
+        self.mods = self.load_mods(self.mods_path)
 
 
-def load_mods(path: str) -> "list[DivaSimpleMod]":
-    loaded = []
-    for mod_path in os.listdir(path):
-        full_mod_path = os.path.join(path, mod_path)
-        if os.path.isdir(full_mod_path):
-            try:
-                loaded.append(diva_mod_create(full_mod_path))
-            except:
-                print_exc()
-    return loaded
+    def load_mods(self, path: str) -> "list[DivaSimpleMod]":
+        with open(os.path.join(self.base_path, "config.toml"), "r", encoding="utf-8") as fd:
+            priority = toml.load(fd).get("priority", [])
+        loaded = []
+        for mod_path in os.listdir(path):
+            full_mod_path = os.path.join(path, mod_path)
+            if os.path.isdir(full_mod_path):
+                try:
+                    loaded.append(diva_mod_create(full_mod_path))
+                except:
+                    print_exc()
+        final = []
+        ##now, order by priority
+        for l in priority:
+            for index, mod in enumerate(loaded):
+                if mod.name == l:
+                    final.append(loaded.pop(index))
+                    break
 
+        final.extend(loaded) # append whatever's left as bottom priority
+        return final
+
+    def save_priority(self):
+        dml_conf_path = os.path.join(self.base_path, "config.toml")
+        with open(dml_conf_path, "r", encoding="utf-8") as fd:
+            d = toml.load(fd)
+        d["priority"] = [os.path.basename(m.path) for m in self.mods if m.enabled] #TODO: does this expect the mod name, or the folder name?
+        with open(dml_conf_path, "w", encoding="utf-8") as fd:
+            toml.dump(d, fd)
 
 def extract_archive(archive: bytes, extract_to: str) -> None:
     try:
