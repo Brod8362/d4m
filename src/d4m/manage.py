@@ -140,7 +140,6 @@ class ModManager:
     def reload(self):
         self.mods = self.load_mods(self.mods_path)
 
-
     def load_mods(self, path: str) -> "list[DivaSimpleMod]":
         with open(os.path.join(self.base_path, "config.toml"), "r", encoding="utf-8") as fd:
             priority = toml.load(fd).get("priority", [])
@@ -167,9 +166,10 @@ class ModManager:
         dml_conf_path = os.path.join(self.base_path, "config.toml")
         with open(dml_conf_path, "r", encoding="utf-8") as fd:
             d = toml.load(fd)
-        d["priority"] = [os.path.basename(m.path) for m in self.mods if m.enabled] #TODO: does this expect the mod name, or the folder name?
+        d["priority"] = [os.path.basename(m.path) for m in self.mods]
         with open(dml_conf_path, "w", encoding="utf-8") as fd:
             toml.dump(d, fd)
+
 
 def extract_archive(archive: bytes, extract_to: str) -> None:
     try:

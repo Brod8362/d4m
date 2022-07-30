@@ -15,7 +15,7 @@ import d4m.api
 import d4m.common
 import d4m.manage
 import packaging.version
-from PySide6.QtGui import QAction, QColor, QDesktopServices, QImage
+from PySide6.QtGui import QAction, QColor, QDesktopServices, QImage, QIcon
 from d4m.manage import ModManager
 
 from d4m.global_config import D4mConfig
@@ -63,6 +63,9 @@ def show_d4m_infobox(content: str, level: str = "info", buttons=qwidgets.QMessag
     msgbox.setStandardButtons(buttons)
     return msgbox.exec()
 
+##############################
+### BUTTON CLICK FUNCTIONS ###
+##############################
 
 def on_dml_toggle_click(status_label, mod_manager: ModManager):
     if mod_manager.enabled:
@@ -145,8 +148,71 @@ def on_edit_mod(selections, mod_manager: ModManager):
             show_d4m_infobox(f"Unable to do that on your platform ({platform})", level="error")
 
 
+def on_migrate_clicked(mod_manager, callback):
+    dialog = DmmMigrateDialog(mod_manager=mod_manager, callback=callback)
+    dialog.exec()
+
+
 def on_refresh_click(selections, mod_manager: ModManager):
     mod_manager.reload()
+
+
+def install_from_archive(selected, mod_manager: ModManager):
+    dialog = qwidgets.QFileDialog()
+    if dialog.exec():
+        file_names = dialog.selectedFiles()
+        if len(file_names) > 1:
+            show_d4m_infobox("Only one mod can be installed at a time.")
+        else:
+            file = file_names[0]
+            try:
+                mod_manager.install_from_archive(file)
+                show_d4m_infobox("Mod installed successfully.")
+            except:
+                show_d4m_infobox(f"Failed to install from archive:\n{format_exc()}", level="error")
+
+
+def open_mod_folder(selected):
+    QDesktopServices.openUrl("file://"+selected[0].path)
+    pass
+
+
+def show_log(parent):
+    dialog = LogDialog(parent=parent)
+    dialog.show()
+
+
+def show_about(parent):
+    about_str = f"""
+    d4m v{d4m.common.VERSION}
+
+    Open-source, cross-platform, Project Diva MegaMix+ mod manager
+
+    Written By Brod8362
+    """
+    qwidgets.QMessageBox.about(parent, "About d4m", about_str)
+
+
+def on_increase_priority(selected, mod_manager: ModManager) -> int:
+    return generic_priority_shift(selected[0], mod_manager, -1)
+
+
+def on_decrease_priority(selected, mod_manager: ModManager) -> int:
+    return generic_priority_shift(selected[0], mod_manager, +1)
+
+
+def generic_priority_shift(mod, mod_manager, shift):
+    if (mod_idx := mod_manager.mods.index(mod)) != -1:
+        if 0 <= mod_idx + shift <= len(mod_manager.mods):
+            t = mod_manager.mods[mod_idx]
+            mod_manager.mods[mod_idx] = mod_manager.mods[mod_idx + shift]
+            mod_manager.mods[mod_idx + shift] = t
+            mod_manager.save_priority()
+            return mod_idx + shift
+
+######################
+### CUSTOM DIALOGS ###
+######################
 
 
 class LogDialog(qwidgets.QDialog):
@@ -214,11 +280,6 @@ class DmmMigrateDialog(qwidgets.QDialog):
         self.setLayout(self.win_layout)
         self.setMinimumSize(350, 300)
         self.setWindowTitle("d4m - Migrate from DivaModManager")
-
-
-def on_migrate_clicked(mod_manager, callback):
-    dialog = DmmMigrateDialog(mod_manager=mod_manager, callback=callback)
-    dialog.exec()
 
 
 class ModInstallDialog(qwidgets.QDialog):
@@ -363,37 +424,6 @@ class ModInstallDialog(qwidgets.QDialog):
         self.setWindowTitle("d4m - Install new mods")
 
 
-def install_from_archive(selected, mod_manager: ModManager):
-    dialog = qwidgets.QFileDialog()
-    if dialog.exec():
-        file_names = dialog.selectedFiles()
-        if len(file_names) > 1:
-            show_d4m_infobox("Only one mod can be installed at a time.")
-        else:
-            file = file_names[0]
-            try:
-                mod_manager.install_from_archive(file)
-                show_d4m_infobox("Mod installed successfully.")
-            except:
-                show_d4m_infobox(f"Failed to install from archive:\n{format_exc()}", level="error")
-
-
-def show_log(parent):
-    dialog = LogDialog(parent=parent)
-    dialog.show()
-
-
-def show_about(parent):
-    about_str = f"""
-    d4m v{d4m.common.VERSION}
-
-    Open-source, cross-platform, Project Diva MegaMix+ mod manager
-
-    Written By Brod8362
-    """
-    qwidgets.QMessageBox.about(parent, "About d4m", about_str)
-
-
 class BackgroundUpdateWorker(PySide6.QtCore.QRunnable):
     def __init__(self, mod_manager, populate_func, parent=None, on_complete=None):
         super(BackgroundUpdateWorker, self).__init__(parent)
@@ -457,13 +487,47 @@ class D4mGUI:
 
         menu_bar = qwidgets.QMenuBar()
         top_row = qwidgets.QHBoxLayout()
+        mod_table_and_buttons_layout = qwidgets.QHBoxLayout()
         mod_table = qwidgets.QTableWidget()
+        mod_table_and_buttons_layout.addWidget(mod_table, 1)
         mod_buttons = qwidgets.QHBoxLayout()
         global statusbar
         statusbar = qwidgets.QStatusBar()
         ver_str = f"d4m v{d4m.common.VERSION}"
         log_msg(ver_str)
         window.setWindowTitle(ver_str)
+
+        # Priority buttons
+        # Signals are all connected later so they can access the autoupdate func
+        mod_context_button_box = qwidgets.QVBoxLayout()
+        mod_context_button_box.insertStretch(-1, 1)
+
+        open_mod_folder_button = qwidgets.QPushButton()
+        open_mod_folder_button.setIcon(main_window.style().standardIcon(qwidgets.QStyle.SP_DirIcon))
+        open_mod_folder_button.setEnabled(False)
+        open_mod_folder_button.setToolTip("Open the mod folder in the system file browser")
+
+        edit_mod_config_button = qwidgets.QPushButton()
+        edit_mod_config_button.setIcon(main_window.style().standardIcon(qwidgets.QStyle.SP_FileDialogContentsView))
+        edit_mod_config_button.setEnabled(False)
+        edit_mod_config_button.setToolTip("Open mod config file in a text editor")
+
+        priority_increase_button = qwidgets.QPushButton()
+        priority_increase_button.setIcon(main_window.style().standardIcon(qwidgets.QStyle.SP_ArrowUp))
+        priority_increase_button.setEnabled(False)
+        priority_increase_button.setToolTip("Increase selected mod priority")
+
+        priority_decrease_button = qwidgets.QPushButton()
+        priority_decrease_button.setIcon(main_window.style().standardIcon(qwidgets.QStyle.SP_ArrowDown))
+        priority_decrease_button.setEnabled(False)
+        priority_decrease_button.setToolTip("Decrease selected mod priority")
+
+        mod_context_button_box.addWidget(open_mod_folder_button)
+        mod_context_button_box.addWidget(edit_mod_config_button)
+        mod_context_button_box.addWidget(priority_increase_button)
+        mod_context_button_box.addWidget(priority_decrease_button)
+        mod_table_and_buttons_layout.addLayout(mod_context_button_box)
+
 
         ### Populate Menu Bar
 
@@ -520,6 +584,7 @@ class D4mGUI:
             )
             mod_table.horizontalHeader().setSectionResizeMode(0, qwidgets.QHeaderView.ResizeMode.ResizeToContents)
             mod_table.horizontalHeader().setSectionResizeMode(1, qwidgets.QHeaderView.ResizeMode.ResizeToContents)
+            mod_table.setAlternatingRowColors(True)
             mod_table.horizontalHeader().setStretchLastSection(True)
             mod_table.verticalHeader().setSectionResizeMode(qwidgets.QHeaderView.ResizeMode.Fixed)
             mod_table.setRowCount(len(mod_manager.mods))
@@ -578,8 +643,10 @@ class D4mGUI:
             """Selected mods will automatically be passed in as first argument."""
             selected_rows = set(map(lambda x: x.row(), mod_table.selectedIndexes()))
             selected_mods = list(map(lambda i: mod_manager.mods[i], selected_rows))
-            func(selected_mods, *args)
+            r = func(selected_mods, *args)
             populate_modlist(update_check=buw.updates_ready)
+            if r is not None:
+                mod_table.selectRow(r)
 
         # fill file menu (needs access to autoupdate)
         action_load_from = QAction("Load from archive...", window)
@@ -592,6 +659,12 @@ class D4mGUI:
         action_migrate_dmm.triggered.connect(
             lambda *_: on_migrate_clicked(mod_manager, populate_modlist(update_check=buw.updates_ready))
         )
+
+        # connect mod context buttons (needs access to autoupdate)
+        edit_mod_config_button.clicked.connect(lambda *_: autoupdate(on_edit_mod, mod_manager))
+        open_mod_folder_button.clicked.connect(lambda *_: autoupdate(open_mod_folder))
+        priority_increase_button.clicked.connect(lambda *_: autoupdate(on_increase_priority, mod_manager))
+        priority_decrease_button.clicked.connect(lambda *_: autoupdate(on_decrease_priority, mod_manager))
 
         action_quit = QAction("Exit", window)
         action_quit.triggered.connect(lambda *_: sys.exit(0))
@@ -615,18 +688,14 @@ class D4mGUI:
         delete_mod_button = qwidgets.QPushButton("Delete Selected")
         delete_mod_button.clicked.connect(lambda *_: autoupdate(on_delete_mod, mod_manager))
 
-        edit_mod_config_button = qwidgets.QPushButton("Edit Config...")
-        edit_mod_config_button.setEnabled(False)
-        edit_mod_config_button.clicked.connect(lambda *_: autoupdate(on_edit_mod, mod_manager))
+        def mod_contexts_available():
+            context_enabled = len(set(map(lambda x: x.row(), mod_table.selectedIndexes()))) == 1
+            edit_mod_config_button.setEnabled(context_enabled)
+            priority_increase_button.setEnabled(context_enabled)
+            priority_decrease_button.setEnabled(context_enabled)
+            open_mod_folder_button.setEnabled(context_enabled)
 
-        def mod_edit_available():
-            selected_row_count = len(set(map(lambda x: x.row(), mod_table.selectedIndexes())))
-            if selected_row_count == 1:
-                edit_mod_config_button.setEnabled(True)
-            else:
-                edit_mod_config_button.setEnabled(False)
-
-        mod_table.itemSelectionChanged.connect(mod_edit_available)
+        mod_table.itemSelectionChanged.connect(mod_contexts_available)
 
         refresh_mod_button = qwidgets.QPushButton("Refresh")
         refresh_mod_button.clicked.connect(lambda *_: autoupdate(on_refresh_click, mod_manager))
@@ -635,7 +704,6 @@ class D4mGUI:
         mod_buttons.addWidget(toggle_mod_button)
         mod_buttons.addWidget(update_mod_button)
         mod_buttons.addWidget(delete_mod_button)
-        mod_buttons.addWidget(edit_mod_config_button)
         mod_buttons.addWidget(refresh_mod_button)
 
         buw = BackgroundUpdateWorker(mod_manager, populate_modlist,
@@ -647,7 +715,7 @@ class D4mGUI:
         main_window.setStatusBar(statusbar)
 
         main_widget.addLayout(top_row)
-        main_widget.addWidget(mod_table)
+        main_widget.addLayout(mod_table_and_buttons_layout)
         main_widget.addLayout(mod_buttons)
 
         main_window.setMinimumSize(950, 500)
