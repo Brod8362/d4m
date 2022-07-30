@@ -4,6 +4,7 @@ import os
 import subprocess
 import sys
 import time
+from importlib.resources import files
 from sys import platform
 from time import strftime
 from traceback import format_exc, print_exc
@@ -15,13 +16,11 @@ import d4m.api
 import d4m.common
 import d4m.manage
 import packaging.version
-from PySide6.QtGui import QAction, QColor, QDesktopServices, QImage, QIcon, QPixmap
+from PySide6.QtGui import QAction, QColor, QDesktopServices, QImage, QPixmap
+from d4m.global_config import D4mConfig
 from d4m.manage import ModManager
 
-from importlib.resources import files
 D4M_ICON_DATA = files("d4m.res").joinpath("logo.png").read_bytes()
-
-from d4m.global_config import D4mConfig
 
 LOG_HISTORY = []
 
@@ -65,6 +64,7 @@ def show_d4m_infobox(content: str, level: str = "info", buttons=qwidgets.QMessag
     msgbox.setIcon(icon)
     msgbox.setStandardButtons(buttons)
     return msgbox.exec()
+
 
 ##############################
 ### BUTTON CLICK FUNCTIONS ###
@@ -176,7 +176,7 @@ def install_from_archive(selected, mod_manager: ModManager):
 
 
 def open_mod_folder(selected):
-    QDesktopServices.openUrl("file://"+selected[0].path)
+    QDesktopServices.openUrl("file://" + selected[0].path)
     pass
 
 
@@ -212,6 +212,7 @@ def generic_priority_shift(mod, mod_manager, shift):
             mod_manager.mods[mod_idx + shift] = t
             mod_manager.save_priority()
             return mod_idx + shift
+
 
 ######################
 ### CUSTOM DIALOGS ###
@@ -504,11 +505,12 @@ class D4mGUI:
         ver_str = f"d4m v{d4m.common.VERSION}"
         d4m_label = qwidgets.QLabel(ver_str)
         d4m_label.setPixmap(D4M_LOGO_PIXMAP)
+        d4m_label.setContentsMargins(0, 0, 0, 0)
         log_msg(ver_str)
         window.setWindowTitle(ver_str)
 
         # Priority buttons
-        # Signals are all connected later so they can access the autoupdate func
+        # Signals are all connected later, so they can access the autoupdate func
         mod_context_button_box = qwidgets.QVBoxLayout()
         mod_context_button_box.insertStretch(-1, 1)
 
@@ -538,7 +540,6 @@ class D4mGUI:
         mod_context_button_box.addWidget(priority_decrease_button)
         mod_table_and_buttons_layout.addLayout(mod_context_button_box)
 
-
         ### Populate Menu Bar
 
         # create menus
@@ -560,7 +561,7 @@ class D4mGUI:
         help_menu.addAction(action_bug_report)
         help_menu.addAction(action_about)
 
-        ### Propogate top row
+        ### Propagate top row
         dml_status_label = qwidgets.QLabel(f"DivaModLoader {dml_version}")
         dml_enable_label = qwidgets.QLabel("ENABLED" if mod_manager.enabled else "DISABLED")
         dml_toggle_button = qwidgets.QPushButton("Toggle DivaModLoader")
@@ -581,7 +582,7 @@ class D4mGUI:
 
         image_thumbnail_cache = {}
 
-        ### Propogate mod list
+        ### Propagate mod list
         mod_table.setColumnCount(7)  # thumbnail, image, name, creator, version, id, size
 
         def populate_modlist(update_check=True):
@@ -685,7 +686,7 @@ class D4mGUI:
         file_menu.addAction(action_migrate_dmm)
         file_menu.addAction(action_quit)
 
-        ### Propogate action buttons
+        ### Propagate action buttons
         install_mod_button = qwidgets.QPushButton("Install Mods...")
         install_mod_button.clicked.connect(lambda *_: autoupdate(on_install_mod, mod_manager, populate_modlist))
 
