@@ -15,8 +15,11 @@ import d4m.api
 import d4m.common
 import d4m.manage
 import packaging.version
-from PySide6.QtGui import QAction, QColor, QDesktopServices, QImage, QIcon
+from PySide6.QtGui import QAction, QColor, QDesktopServices, QImage, QIcon, QPixmap
 from d4m.manage import ModManager
+
+from importlib.resources import files
+D4M_ICON_DATA = files("d4m.res").joinpath("logo.png").read_bytes()
 
 from d4m.global_config import D4mConfig
 
@@ -464,6 +467,11 @@ class D4mGUI:
         window = qwidgets.QWidget()
         main_window.setCentralWidget(window)
 
+        D4M_LOGO_PIXMAP = QPixmap()
+        D4M_LOGO_PIXMAP.loadFromData(D4M_ICON_DATA)
+        D4M_LOGO_PIXMAP = D4M_LOGO_PIXMAP.scaled(32, 32)
+        qapp.setWindowIcon(D4M_LOGO_PIXMAP)
+
         ## Start d4m update check
         def d4m_update_check():
             last_checked = d4m_config["last_d4m_update_check"]
@@ -494,6 +502,8 @@ class D4mGUI:
         global statusbar
         statusbar = qwidgets.QStatusBar()
         ver_str = f"d4m v{d4m.common.VERSION}"
+        d4m_label = qwidgets.QLabel(ver_str)
+        d4m_label.setPixmap(D4M_LOGO_PIXMAP)
         log_msg(ver_str)
         window.setWindowTitle(ver_str)
 
@@ -544,7 +554,7 @@ class D4mGUI:
             lambda *_: QDesktopServices.openUrl("https://github.com/Brod8362/d4m/issues/new/choose"))
 
         action_about = QAction("About d4m", window)
-        action_about.triggered.connect(lambda *_: show_about(window))
+        action_about.triggered.connect(lambda *_: show_about(main_window))
 
         help_menu.addAction(action_github)
         help_menu.addAction(action_bug_report)
@@ -561,6 +571,7 @@ class D4mGUI:
         open_diva_folder.clicked.connect(lambda *_: QDesktopServices.openUrl(f"file://{mod_manager.base_path}"))
         mod_count_label = qwidgets.QLabel("-- mod(s) / -- enabled")
 
+        top_row.addWidget(d4m_label)
         top_row.addWidget(dml_status_label)
         top_row.addWidget(dml_enable_label, alignment=PySide6.QtCore.Qt.AlignLeft)
         top_row.addWidget(dml_toggle_button)
@@ -712,6 +723,7 @@ class D4mGUI:
 
         # # Populate main GUI
         main_window.setMenuBar(menu_bar)
+        # main_window.setWindowIcon(D4M_LOGO_PIXMAP)
         main_window.setStatusBar(statusbar)
 
         main_widget.addLayout(top_row)
