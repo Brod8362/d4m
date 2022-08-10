@@ -22,7 +22,7 @@ def multi_fetch_mod_data(mod_info: "list[tuple[int, str]]") -> "list[dict]":
             DMA_BASE_DOMAIN + DMA_GET_BY_ID_BULK,
             params=[("post_id", i) for i in need_fetch]
         )
-        if resp.status_code != 200:
+        if resp.status_code // 100 != 2:
             raise RuntimeError(f"DMA info returned {resp.status_code}")
 
         j = resp.json()
@@ -49,7 +49,7 @@ def fetch_mod_data(mod_id: int, _category: str) -> "dict":
     resp = requests.get(
         DMA_BASE_DOMAIN + DMA_GET_BY_ID + str(mod_id)
     )
-    if resp.status_code != 200:
+    if resp.status_code // 100 != 2:
         raise RuntimeError(f"DMA info returned {resp.status_code}")
 
     j = resp.json()
@@ -76,7 +76,7 @@ def search_mods(query: str):
     )
     if resp.status_code == 404:
         return []
-    if resp.status_code != 200:
+    if resp.status_code // 100 != 2:
         raise RuntimeError(f"DMA search API returned {resp.status_code}")
 
     j = resp.json()
