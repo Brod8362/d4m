@@ -31,8 +31,12 @@ def generate_preview(mod_str: str, mod_manager: ModManager):
     if not mod.is_simple():
         content.append(f"Origin: {mod.origin}")
         content.append(f"Mod ID: {mod.id}")
-        utd_str = f"{colorama.Fore.YELLOW}Out of date{colorama.Fore.RESET}" if mod.is_out_of_date() else f"{colorama.Fore.GREEN}Up to date{colorama.Fore.RESET}"
-        content.append(f"Update Status: {utd_str}")
+        try:
+            utd_str = f"{colorama.Fore.YELLOW}Out of date{colorama.Fore.RESET}" if mod.is_out_of_date() else f"{colorama.Fore.GREEN}Up to date{colorama.Fore.RESET}"
+        except RuntimeError as e:
+            utd_str = f"Failed to check update: {colorama.Fore.RED}{e}{colorama.Fore.RESET}"
+        content.append(utd_str)
+
     return "\n".join(content)
 
 
@@ -235,13 +239,17 @@ def main():
     print(f"{len(mod_manager.mods)} mods installed")
     print(f"{colorama.Fore.YELLOW}Checking for mod updates...{colorama.Fore.RESET}")
     begin = time.time()
-    mod_manager.check_for_updates()
-    print(f"Update check completed in {time.time() - begin:.1f}s")
-    available_updates = sum(1 for _ in filter(lambda x: not x.is_simple() and x.is_out_of_date(), mod_manager.mods))
-    if available_updates == 0:
-        print(f"{colorama.Fore.GREEN}All mods up-to-date.{colorama.Fore.RESET}")
-    else:
-        print(f"{colorama.Fore.YELLOW}{available_updates} mods have updates available.{colorama.Fore.RESET}")
+    available_updates = -1
+    try:
+        mod_manager.check_for_updates()
+        print(f"Update check completed in {time.time() - begin:.1f}s")
+        available_updates = sum(1 for _ in filter(lambda x: not x.is_simple() and x.is_out_of_date(), mod_manager.mods))
+        if available_updates == 0:
+            print(f"{colorama.Fore.GREEN}All mods up-to-date.{colorama.Fore.RESET}")
+        else:
+            print(f"{colorama.Fore.YELLOW}{available_updates} mods have updates available.{colorama.Fore.RESET}")
+    except RuntimeError as e:
+        print(f"{colorama.Fore.RED}Failed to check for mod updates:{colorama.Fore.RESET} {e}")
 
     base_options = [
         ("Install new mods", menu_install),
@@ -253,7 +261,7 @@ def main():
 
     while True:
         options = base_options.copy()
-        if available_updates != 0:
+        if available_updates > 0:
             options.append(
                 (f"Update all", do_update_all)
             )
