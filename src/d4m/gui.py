@@ -629,9 +629,13 @@ class D4mGUI:
                             "This mod is missing metadata information and the latest version cannot be determined.")
                 else:
                     mod_version = qwidgets.QTableWidgetItem(str(mod.version))
-                    if update_check and mod.is_out_of_date():
-                        mod_version.setBackground(QColor.fromRgb(255, 255, 0))
-                        mod_version.setToolTip("A new version is available.")
+                    try:
+                        if update_check and mod.is_out_of_date():
+                            mod_version.setBackground(QColor.fromRgb(255, 255, 0))
+                            mod_version.setToolTip("A new version is available.")
+                    except RuntimeError as e:
+                        mod_version.setBackground(QColor.fromRgb(255, 0, 0))
+                        mod_version.setToolTip(f"An error occurred while checking for updates:\n{e}")
 
                     mod_id = qwidgets.QTableWidgetItem(str(mod.id))
 
