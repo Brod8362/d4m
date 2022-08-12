@@ -70,7 +70,6 @@ def fetch_mod_data(mod_id: int, category: str) -> "dict":
     """
     if mod_id in mod_info_cache:
         return mod_info_cache[mod_id]
-    print(f"CACHE LENGTH {len(mod_info_cache)}")
     return multi_fetch_mod_data([(mod_id, category)])[0]
 
 

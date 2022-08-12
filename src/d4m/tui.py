@@ -15,6 +15,7 @@ from d4m.manage import ModManager, check_modloader_version, install_modloader
 
 from traceback import print_exc
 
+
 def generate_preview(mod_str: str, mod_manager: ModManager):
     content = []
     found = list(filter(lambda x: str(x) == mod_str, mod_manager.mods))
@@ -42,8 +43,8 @@ def generate_preview(mod_str: str, mod_manager: ModManager):
 
 def menu_install(mod_manager: ModManager):
     search_str = input("Search for a mod...:")
-    gb_mods =  api.search_mods(search_str, origin = "gamebanana")
-    dma_mods = api.search_mods(search_str, origin = "divamodarchive")
+    gb_mods = api.search_mods(search_str, origin="gamebanana")
+    dma_mods = api.search_mods(search_str, origin="divamodarchive")
     found_mods = gb_mods + dma_mods
     installed_ids = [mod.id for mod in mod_manager.mods if not mod.is_simple()]
     if not found_mods:
@@ -69,7 +70,7 @@ def menu_install(mod_manager: ModManager):
             else:
                 try:
                     print(f"Installing {mod['name']} ({mod['id']})")
-                    mod_manager.install_mod(mod['id'], origin=mod['origin'])
+                    mod_manager.install_mod(mod['id'], mod["category"], origin=mod['origin'])
                     print(f"{colorama.Fore.GREEN}Installed {mod['name']}{colorama.Fore.RESET}")
                 except Exception as e:
                     print(f"{colorama.Fore.RED}Failed to install {mod['name']}{colorama.Fore.RESET}({e})")
@@ -90,7 +91,7 @@ def menu_manage(mod_manager: ModManager):
                             preview_title="Mod Info", preview_size=0.5,
                             status_bar=f"q to exit, / to search, {KEY_MOVE_UP}/{KEY_MOVE_DOWN} to adjust priority",
                             cursor_index=idx, accept_keys=["enter", KEY_MOVE_UP, KEY_MOVE_DOWN]
-                        )
+                            )
         idx = menu.show()
         selected_key = menu.chosen_accept_key
         if idx is None:
@@ -106,7 +107,7 @@ def menu_manage(mod_manager: ModManager):
             else:
                 print(f"{colorama.Fore.RED}Cannot shift out of bounds{colorama.Fore.RESET}")
         elif 0 < idx < len(options):
-            selected_mod = mod_manager.mods[idx - 1]
+            selected_mod = mod_manager.mods[idx]
             mod_is_enabled = mod_manager.is_enabled(selected_mod)
             editor = os.environ.get("EDITOR", "nano")
             inner_options = [
@@ -154,9 +155,11 @@ def do_update_all(mod_manager: ModManager):
             except Exception as e:
                 print(f"{colorama.Fore.RED}Failed to update {mod.name}: {e}{colorama.Fore.RESET}")
 
+
 def edit_d4m_config(*args):
     editor = os.environ.get("EDITOR", "nano")
     subprocess.run([editor, os.path.expanduser("~/.config/d4m.toml")])
+
 
 def migrate_from_dmm(mod_manager: ModManager):
     attempted = 0
@@ -164,18 +167,19 @@ def migrate_from_dmm(mod_manager: ModManager):
     for mod in mod_manager.mods:
         if mod.is_simple() and mod.can_attempt_dmm_migration():
             print(f"Attempting to migrate {mod.name}...")
-            attempted+=1
+            attempted += 1
             res = mod.attempt_migrate_from_dmm()
             if res:
                 print(f"{colorama.Fore.GREEN}Successfully migrated {mod.name}.{colorama.Fore.RESET}")
-                successful+=1
+                successful += 1
             else:
                 print(f"{colorama.Fore.RED}Couldn't migrate {mod.name}{colorama.Fore.RESET}")
     if attempted > 0:
         print(f"Attempted to migrate {attempted} mods, {successful} successful.")
     else:
-        print(f"No mods elgibile for migration.")
+        print(f"No mods eligible for migration.")
     mod_manager.reload()
+
 
 def main():
     print(f"d4m v{VERSION}")
@@ -193,14 +197,15 @@ def main():
     try:
         megamix_path = d4m_config.get_diva_path()
     except:
-        menu = TerminalMenu(["Yes", "No"], title=f"Couldn't determine diva install dir. Would you like to edit the d4m config file?")
+        menu = TerminalMenu(["Yes", "No"],
+                            title=f"Couldn't determine diva install dir. Would you like to edit the d4m config file?")
         r = menu.show()
         if r == 0:
             edit_d4m_config()
             sys.exit(0)
         else:
             sys.exit(1)
-            
+
     print(f"Using the diva directory located at {megamix_path}")
 
     if not modloader_is_installed(megamix_path):
