@@ -1,13 +1,14 @@
 [build-system]
 requires = [
     "setuptools",
-    "setuptools-scm"
+    "setuptools-scm",
+    "setuptools-git-versioning"
 ]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "d4m"
-version = "0.3.2"
+dynamic = ["version"]
 authors = [
     { name = "Brod8362", email = "brod8362@gmail.com" },
 ]
@@ -42,3 +43,7 @@ d4m-gui = "d4m.gui:main"
 
 [tool.setuptools.package-data]
 "d4m.res" = ["*.svg","*.png"]
+
+[tool.setuptools-git-versioning]
+enabled = true
+dirty_template = "{tag}.dev+{ccount}"
