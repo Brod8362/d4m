@@ -16,11 +16,12 @@ import d4m.api
 import d4m.common
 import d4m.manage
 import packaging.version
+import requests.exceptions
 from PySide6.QtGui import QAction, QColor, QDesktopServices, QImage, QPixmap
 from d4m.global_config import D4mConfig
 from d4m.manage import ModManager
 
-D4M_ICON_DATA = files("d4m.res").joinpath("logo.png").read_bytes()
+D4M_ICON_DATA = files("d4m.res").joinpath("logo.svg").read_bytes()
 
 LOG_HISTORY = []
 
