@@ -193,11 +193,6 @@ def extract_archive(archive: bytes, extract_to: str) -> None:
 
 
 def install_modloader(diva_path: str):
-    try:
-        import libarchive.public
-    except:
-        raise RuntimeError("Modloader installation not supported on this platform")
-    # TODO: add check here to see if platform supports this
     version, download_url = check_modloader_version()
     resp = requests.get(download_url)
     if resp.status_code != 200:
