@@ -158,6 +158,7 @@ def on_migrate_clicked(mod_manager, callback):
 
 
 def on_refresh_click(selections, mod_manager: ModManager):
+    mod_manager.save_priority()
     mod_manager.reload()
 
 
