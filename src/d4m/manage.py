@@ -155,7 +155,7 @@ class ModManager:
         ##now, order by priority
         for l in priority:
             for index, mod in enumerate(loaded):
-                if mod.name == l:
+                if os.path.basename(mod.path) == l:
                     final.append(loaded.pop(index))
                     break
 
