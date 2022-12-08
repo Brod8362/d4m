@@ -759,6 +759,8 @@ def main():
 
     try:
         megamix_path = os.environ.get("D4M_INSTALL_DIR", d4m_config.get_diva_path())
+        if not megamix_path:
+            raise RuntimeError("megamix path is None")
     except:
         content = f"Failed to determine where MegaMix is installed.\nWould you like to specify the install directory manually?"
         res = show_d4m_infobox(content, level="error", buttons=qwidgets.QMessageBox.Yes | qwidgets.QMessageBox.No)
