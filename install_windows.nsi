@@ -21,5 +21,6 @@ SectionEnd
 Section "Uninstall"
 
 Delete $INSTDIR\d4m.exe
+Delete $INSTDIR\logo.svg
 
 SectionEnd
