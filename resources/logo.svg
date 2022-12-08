@@ -26,12 +26,12 @@
      inkscape:document-units="mm"
      showgrid="false"
      inkscape:zoom="2.8190719"
-     inkscape:cx="85.311766"
-     inkscape:cy="32.280128"
+     inkscape:cx="75.024692"
+     inkscape:cy="32.457491"
      inkscape:window-width="1920"
-     inkscape:window-height="1040"
+     inkscape:window-height="1023"
      inkscape:window-x="0"
-     inkscape:window-y="19"
+     inkscape:window-y="37"
      inkscape:window-maximized="1"
      inkscape:current-layer="layer1" />
   <defs
@@ -63,17 +63,23 @@
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1">
-    <text
-       xml:space="preserve"
-       style="font-size:21.7607px;font-family:'Font Awesome 6 Brands';-inkscape-font-specification:'Font Awesome 6 Brands';letter-spacing:-1.85978px;fill:url(#linearGradient1649);fill-opacity:1;stroke:#280b0b;stroke-width:0.226671"
-       x="-0.74315035"
-       y="23.603575"
+    <g
+       aria-label="d4m"
+       transform="rotate(0.1756011)"
        id="text1466"
-       transform="rotate(0.1756011)"><tspan
-         sodipodi:role="line"
-         id="tspan1464"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Source Code Variable';-inkscape-font-specification:'Source Code Variable';baseline-shift:baseline;fill:url(#linearGradient1649);fill-opacity:1;stroke-width:0.226671"
-         x="-0.74315035"
-         y="23.603575">d4m</tspan></text>
+       style="font-size:21.7607px;font-family:'Font Awesome 6 Brands';-inkscape-font-specification:'Font Awesome 6 Brands';letter-spacing:-1.85978px;fill:url(#linearGradient1649);stroke:#280b0b;stroke-width:0.226671">
+      <path
+         d="m 5.1322387,23.864703 c 1.3274027,0 2.5895233,-0.739864 3.4599513,-1.632052 h 0.065282 l 0.1305642,1.370924 H 10.267764 V 8.1099562 H 8.4833865 v 4.0692508 l 0.087043,1.958463 H 8.5269079 C 7.5911978,13.267242 6.6119663,12.766746 5.3498457,12.766746 c -2.5024805,0 -4.80911474,2.132549 -4.80911474,5.570739 0,3.525234 1.84965954,5.527218 4.59150774,5.527218 z m 0.3916926,-1.501488 c -1.958463,0 -3.1335408,-1.501488 -3.1335408,-4.04749 0,-2.393677 1.5014883,-4.02573 3.3076264,-4.02573 0.9357101,0 1.8278988,0.326411 2.7853696,1.218599 v 5.28785 c -0.9357101,1.044514 -1.9149416,1.566771 -2.9594552,1.566771 z"
+         style="font-family:'Source Code Variable';-inkscape-font-specification:'Source Code Variable';baseline-shift:baseline"
+         id="path316" />
+      <path
+         d="M 18.439675,23.603575 H 20.13701 V 9.720248 h -1.893181 l -6.941663,8.856605 v 1.196839 H 22.31308 v -1.436207 h -9.052451 l 3.786361,-4.722072 c 0.456975,-0.674581 0.957471,-1.349163 1.414446,-2.023745 h 0.108803 c -0.04352,0.761625 -0.08704,1.697335 -0.130564,2.437199 z"
+         style="font-family:'Source Code Variable';-inkscape-font-specification:'Source Code Variable';baseline-shift:baseline"
+         id="path318" />
+      <path
+         d="m 22.890507,23.603575 h 1.806138 v -7.638006 c 0.522257,-1.088035 1.000992,-1.632053 1.740856,-1.632053 0.761624,0 1.066274,0.631061 1.066274,1.827899 v 7.44216 h 1.675574 v -7.638006 c 0.565778,-1.088035 0.957471,-1.632053 1.675574,-1.632053 0.783385,0 1.131556,0.631061 1.131556,1.827899 v 7.44216 h 1.806139 v -7.572724 c 0,-2.110788 -0.870428,-3.264105 -2.350156,-3.264105 -1.218599,0 -1.87142,0.696342 -2.48072,1.827899 -0.30465,-1.218599 -0.957471,-1.827899 -2.001984,-1.827899 -1.2186,0 -1.871421,0.674582 -2.415438,1.653813 h -0.04352 l -0.152325,-1.392685 h -1.457967 z"
+         style="font-family:'Source Code Variable';-inkscape-font-specification:'Source Code Variable';baseline-shift:baseline"
+         id="path320" />
+    </g>
   </g>
 </svg>

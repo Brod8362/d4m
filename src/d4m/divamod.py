@@ -22,7 +22,15 @@ class DivaSimpleMod:
         self.path = path
         with open(os.path.join(path, "config.toml"), "r", encoding="UTF-8") as mod_conf_fd:
             data = toml.load(mod_conf_fd)
-            self.version = None if "version" not in data else packaging.version.Version(data["version"])
+            self.version = None
+            try:
+                self.version = packaging.version.Version(data["version"])
+            except packaging.version.InvalidVersion:
+                #mod version is unparseable
+                pass
+            except KeyError:
+                # mod does not have a version specified in the config
+                pass
             self.name = data.get("name", os.path.basename(path))
             self.author = data.get("author", "unknown author")
             self.enabled = data["enabled"]
@@ -68,7 +76,7 @@ class DivaSimpleMod:
         return os.path.exists(os.path.join(self.path, "mod.json"))
 
     def attempt_migrate_from_dmm(self) -> bool:
-        """Attempt to use dmm's mod.json file to get meqtadata."""
+        """Attempt to use dmm's mod.json file to get metadata."""
         try:
             with open(os.path.join(self.path, "mod.json"), "r", encoding="UTF-8") as dmm_fd:
                 dmm_data = json.load(dmm_fd)
@@ -77,11 +85,13 @@ class DivaSimpleMod:
                     if "gamebanana" in homepage:
                         potential_id = homepage.split("/")[-1]
                         try:
-                            api.fetch_mod_data(potential_id)
+                            api.fetch_mod_data(potential_id, "Mod", origin="gamebanana") #TODO: maybe don't assume mod here?
                             with open(os.path.join(self.path, "modinfo.toml"), "w", encoding="UTF-8") as d4m_fd:
                                 d4m_mod_data = {
                                     "id": potential_id,
-                                    "hash": "no-hash"
+                                    "hash": "no-hash",
+                                    "origin": "gamebanana",
+                                    "category": "Mod"
                                 }
                                 toml.dump(d4m_mod_data, d4m_fd)
                                 return True
@@ -104,7 +114,8 @@ class DivaMod(DivaSimpleMod):
                 mod_data = toml.load(moddata_fd)
                 self.id = mod_data["id"]
                 self.hash = mod_data["hash"]
-                self.origin = mod_data.get("origin", "gamebanana")
+                self.origin = mod_data.get("origin", "gamebanana") #gamebanana compat
+                self.category = mod_data.get("category", "Mod") #gamebanana compat
         except (IOError, KeyError):
             raise UnmanageableModError
 
@@ -122,4 +133,4 @@ class DivaMod(DivaSimpleMod):
 
     @functools.cached_property
     def modinfo(self):
-        return api.fetch_mod_data(self.id, origin=self.origin)
+        return api.fetch_mod_data(self.id, self.category, origin=self.origin)

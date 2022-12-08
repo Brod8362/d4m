@@ -11,32 +11,32 @@ GB_SEARCH_ENDPOINT = "/apiv9/Util/Game/Submissions"
 
 GB_DIVA_GAME_ID = 16522
 
-def multi_fetch_mod_data(mod_ids: "list[int]") -> "list[dict]":
+
+def multi_fetch_mod_data(mod_info: "list[tuple[int, str]]") -> "list[dict]":
     mod_data = []
     need_fetch = []
-    for mod_id in mod_ids:
+    for (mod_id, category) in mod_info:
         if mod_id in mod_info_cache:
             mod_data.append(mod_info_cache[mod_id])
         else:
-            need_fetch.append(mod_id)
+            need_fetch.append((mod_id, category))
 
     if len(need_fetch) > 0:
         params = {}
-        for (index, mod_id) in enumerate(need_fetch):
+        for index, (mod_id, category) in enumerate(need_fetch):
             params.update({
                 f"itemid[{index}]": mod_id,
                 f"fields[{index}]": "Files().aFiles(),Preview().sStructuredDataFullsizeUrl(),likes,downloads",
-                f"itemtype[{index}]": "Mod"
+                f"itemtype[{index}]": category
             })
-        resp = requests.get(GB_BASE_DOMAIN + GB_GET_DATA_ENDPOINT,
-                            params=params
-                            )
+
+        resp = requests.get(GB_BASE_DOMAIN + GB_GET_DATA_ENDPOINT, params=params)
 
         if resp.status_code != 200:
             raise RuntimeError(f"Gamebanana API returned {resp.status_code}")
 
         for (index, elem) in enumerate(resp.json()):
-            mod_id = need_fetch[index]
+            mod_id = need_fetch[index][0]
             try:
                 files = sorted(elem[0].values(), key=lambda x: x["_tsDateAdded"], reverse=True)
                 obj = {
@@ -64,14 +64,14 @@ def multi_fetch_mod_data(mod_ids: "list[int]") -> "list[dict]":
     return mod_data
 
 
-def fetch_mod_data(mod_id: int) -> "dict":
+def fetch_mod_data(mod_id: int, category: str) -> "dict":
     """
     dict w/ keys id, hash, download
     """
     if mod_id in mod_info_cache:
         return mod_info_cache[mod_id]
+    return multi_fetch_mod_data([(mod_id, category)])[0]
 
-    return multi_fetch_mod_data([mod_id])[0]
 
 def search_mods(query: str):
     resp = requests.get(
@@ -89,20 +89,21 @@ def search_mods(query: str):
 
     j = resp.json()
 
-    def map_name(ers):
-        mod_id = ers["_idRow"]
-        return mod_id, f"{ers['_sName']} by {ers['_aSubmitter']['_sName']}"
+    def map_mod(ers):
+        obj = {
+            "name": ers['_sName'],
+            "id": ers['_idRow'],
+            "author": ers['_aSubmitter']['_sName'],
+            "category": ers['_sModelName'],
+            "origin": "gamebanana"
+        }
+        return obj
 
-    return list(map(map_name, j))
+    return list(map(map_mod, j))
 
-def download_mod(mod_id: int = None, download_path: str = None) -> bytes:
-    effective_download = download_path
-    if mod_id is not None:
-        modinfo = fetch_mod_data(mod_id)
-        effective_download = modinfo["download"]
-    if not effective_download:
-        raise ValueError("Failed to download mod: invalid args")
-    resp = requests.get(effective_download)
-    if resp.status_code != 200:
-        raise RuntimeError(f"File download returned {resp.status_code}")
-    return resp.content
+
+def download_favicon():
+    r = requests.get("https://images.gamebanana.com/static/img/favicon/favicon.ico")
+    if r.status_code != 200:
+        return None
+    return r.content

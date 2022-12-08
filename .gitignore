@@ -7,3 +7,5 @@ EXPORT_32.png
 EXPORT_64.png
 EXPORT_128.png
 build
+.vscode
+.idea
