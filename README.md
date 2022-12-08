@@ -23,7 +23,7 @@ Features
 Installation
 ============
 
-Requirements: `python >= 3.8`, `libarchive`
+Requirements: `python >= 3.9`, `libarchive`
 
 ### Linux
 

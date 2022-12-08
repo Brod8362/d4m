@@ -1,6 +1,6 @@
 import requests
 
-DMA_BASE_DOMAIN = "https://divamodarchive.xyz/api/v1"
+DMA_BASE_DOMAIN = "https://divamodarchive.com/api/v1"
 DMA_SEARCH = "/posts/latest"
 DMA_GET_BY_ID = "/posts/"
 DMA_GET_BY_ID_BULK = "/posts/posts"
