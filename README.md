@@ -47,7 +47,7 @@ Download the latest d4m installer from the [releases page.](https://github.com/B
 
 *Note: libarchive must be installed 
 
-```
+```sh
 git clone https://github.com/Brod8362/d4m
 cd d4m
 python -m pip install build
@@ -59,12 +59,27 @@ python -m pip install dist/*.whl
 
 *Note: libarchive must be installed
 
-```
+```sh
 git clone https://github.com/Brod8362/d4m
 cd d4m
 git checkout unstable
 python -m pip install build
 python -m pip install -e .
+```
+
+### Flatpak (pre-built binary)
+
+Download the latest .flatpak from the [releases](https://github.com/Brod8362/d4m/releases) section and install it via `flatpak install`. (e.g, `flatpak install d4m-VERSION.flatpak`)
+
+### Flatpak (building)
+
+```sh
+git clone https://github.com/Brod8362/d4m
+cd d4m/flatpak
+./build.sh --repo=REPO_PATH --force-clean
+flatpak build-bundle REPO_PATH d4m-VERSION.flatpak pw.byakuren.d4m
+flatpak install d4m.flatpak
+rm d4m.flatpak # optional
 ```
 
 Running

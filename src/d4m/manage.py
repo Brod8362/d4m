@@ -159,7 +159,7 @@ class ModManager:
                     final.append(loaded.pop(index))
                     break
 
-        final.extend(loaded) # append whatever's left as bottom priority
+        final.extend(loaded)  # append whatever is left as bottom priority
         return final
 
     def save_priority(self):
