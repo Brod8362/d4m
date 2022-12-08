@@ -21,7 +21,13 @@ from PySide6.QtGui import QAction, QColor, QDesktopServices, QImage, QPixmap
 from d4m.global_config import D4mConfig
 from d4m.manage import ModManager
 
-D4M_ICON_DATA = files("d4m.res").joinpath("logo.svg").read_bytes()
+if os.name == "nt":  # windows hack for svg because pyinstaller isn't cooperating
+    with open(os.path.join(os.path.expandvars("%ProgramFiles(x86)%"), "d4m", "logo.svg"), "rb") as fd:
+        D4M_ICON_DATA = fd.read()
+else:
+    import d4m.res
+
+    D4M_ICON_DATA = files("d4m.res").joinpath("logo.svg").read_bytes()
 
 LOG_HISTORY = []
 
