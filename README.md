@@ -27,7 +27,7 @@ Requirements: `python >= 3.9`, `libarchive`
 
 ### Steam Deck Users
 
-Proceed to [installing with Flatpak](#flatpak--pre-built-binary-)
+Proceed to [installing with Flatpak](#flatpak-pre-built-binary)
 
 ### Linux
 
@@ -138,3 +138,8 @@ You can override some parameters of d4m via environment variables.
 | Environment Variable | Purpose                    | Default                   |
 | -------------------- | -------------------------- | ------------------------- |
 | `D4M_INSTALL_DIR`    | MegaMix+ install directory | Auto-determined via steam |
+
+Etc
+===
+
+Font for logo (from 0.3.4 onwards) is [Corporation Games](https://www.dafont.com/corporation-games.font)

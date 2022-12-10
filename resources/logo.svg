@@ -2,12 +2,12 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="128"
-   height="128"
-   viewBox="0 0 33.866666 33.866666"
+   width="256mm"
+   height="256mm"
+   viewBox="0 0 256 256"
    version="1.1"
    id="svg5"
-   inkscape:version="1.2.1 (9c6d41e410, 2022-07-14)"
+   inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
    sodipodi:docname="logo.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
@@ -25,39 +25,43 @@
      inkscape:deskcolor="#505050"
      inkscape:document-units="mm"
      showgrid="false"
-     inkscape:zoom="2.8190719"
-     inkscape:cx="75.024692"
-     inkscape:cy="32.457491"
-     inkscape:window-width="1920"
-     inkscape:window-height="1023"
-     inkscape:window-x="0"
-     inkscape:window-y="37"
+     inkscape:zoom="0.4284256"
+     inkscape:cx="571.86126"
+     inkscape:cy="270.7588"
+     inkscape:window-width="959"
+     inkscape:window-height="1040"
+     inkscape:window-x="960"
+     inkscape:window-y="19"
      inkscape:window-maximized="1"
      inkscape:current-layer="layer1" />
   <defs
      id="defs2">
     <linearGradient
        inkscape:collect="always"
-       id="linearGradient1647">
+       id="linearGradient977">
       <stop
-         style="stop-color:#2ab7ff;stop-opacity:1;"
+         style="stop-color:#ee5c89;stop-opacity:1;"
          offset="0"
-         id="stop1643" />
+         id="stop973" />
       <stop
-         style="stop-color:#cbf100;stop-opacity:1;"
+         style="stop-color:#e7ed3c;stop-opacity:1;"
+         offset="0.5"
+         id="stop3885" />
+      <stop
+         style="stop-color:#3ee2c4;stop-opacity:1;"
          offset="1"
-         id="stop1645" />
+         id="stop975" />
     </linearGradient>
     <linearGradient
        inkscape:collect="always"
-       xlink:href="#linearGradient1647"
-       id="linearGradient1649"
-       x1="9.041158"
-       y1="5.7798748"
-       x2="57.655407"
-       y2="5.6308804"
+       xlink:href="#linearGradient977"
+       id="linearGradient979"
+       x1="138.49713"
+       y1="57.109653"
+       x2="140.16953"
+       y2="155.66431"
        gradientUnits="userSpaceOnUse"
-       gradientTransform="matrix(0.85671293,0,0,0.85671293,-8.6021636,10.526625)" />
+       gradientTransform="translate(7.8138149,-5.5466061)" />
   </defs>
   <g
      inkscape:label="Layer 1"
@@ -65,21 +69,21 @@
      id="layer1">
     <g
        aria-label="d4m"
-       transform="rotate(0.1756011)"
-       id="text1466"
-       style="font-size:21.7607px;font-family:'Font Awesome 6 Brands';-inkscape-font-specification:'Font Awesome 6 Brands';letter-spacing:-1.85978px;fill:url(#linearGradient1649);stroke:#280b0b;stroke-width:0.226671">
+       transform="scale(0.89173427,1.1214103)"
+       id="text186"
+       style="font-style:italic;font-size:119.944px;font-family:'Noto Sans Grantha';-inkscape-font-specification:'Noto Sans Grantha Italic';fill:url(#linearGradient979);stroke:#294242;stroke-width:4.90000001;stroke-opacity:1;stroke-dasharray:none">
       <path
-         d="m 5.1322387,23.864703 c 1.3274027,0 2.5895233,-0.739864 3.4599513,-1.632052 h 0.065282 l 0.1305642,1.370924 H 10.267764 V 8.1099562 H 8.4833865 v 4.0692508 l 0.087043,1.958463 H 8.5269079 C 7.5911978,13.267242 6.6119663,12.766746 5.3498457,12.766746 c -2.5024805,0 -4.80911474,2.132549 -4.80911474,5.570739 0,3.525234 1.84965954,5.527218 4.59150774,5.527218 z m 0.3916926,-1.501488 c -1.958463,0 -3.1335408,-1.501488 -3.1335408,-4.04749 0,-2.393677 1.5014883,-4.02573 3.3076264,-4.02573 0.9357101,0 1.8278988,0.326411 2.7853696,1.218599 v 5.28785 c -0.9357101,1.044514 -1.9149416,1.566771 -2.9594552,1.566771 z"
-         style="font-family:'Source Code Variable';-inkscape-font-specification:'Source Code Variable';baseline-shift:baseline"
-         id="path316" />
+         d="m 40.610059,99.22261 -4.978144,35.13984 H 70.771759 L 75.749903,99.22261 Z M 20.463215,75.796048 H 79.029622 L 81.489411,58.226126 H 104.91597 L 90.918602,157.78902 H 8.9256334 Z"
+         style="font-family:'Corporation Games';-inkscape-font-specification:'Corporation Games Italic';stroke:#294242;stroke-opacity:1;stroke-width:4.90000001;stroke-dasharray:none"
+         id="path16257" />
       <path
-         d="M 18.439675,23.603575 H 20.13701 V 9.720248 h -1.893181 l -6.941663,8.856605 v 1.196839 H 22.31308 v -1.436207 h -9.052451 l 3.786361,-4.722072 c 0.456975,-0.674581 0.957471,-1.349163 1.414446,-2.023745 h 0.108803 c -0.04352,0.761625 -0.08704,1.697335 -0.130564,2.437199 z"
-         style="font-family:'Source Code Variable';-inkscape-font-specification:'Source Code Variable';baseline-shift:baseline"
-         id="path318" />
+         d="m 166.87923,75.796048 h 23.42656 l -11.53758,81.992972 h -23.42656 l 2.45979,-17.56993 H 99.235032 l 9.077788,-64.423042 h 23.42657 l -5.79808,40.996482 h 35.13985 z"
+         style="font-family:'Corporation Games';-inkscape-font-specification:'Corporation Games Italic';stroke:#294242;stroke-opacity:1;stroke-width:4.90000001;stroke-dasharray:none"
+         id="path16259" />
       <path
-         d="m 22.890507,23.603575 h 1.806138 v -7.638006 c 0.522257,-1.088035 1.000992,-1.632053 1.740856,-1.632053 0.761624,0 1.066274,0.631061 1.066274,1.827899 v 7.44216 h 1.675574 v -7.638006 c 0.565778,-1.088035 0.957471,-1.632053 1.675574,-1.632053 0.783385,0 1.131556,0.631061 1.131556,1.827899 v 7.44216 h 1.806139 v -7.572724 c 0,-2.110788 -0.870428,-3.264105 -2.350156,-3.264105 -1.218599,0 -1.87142,0.696342 -2.48072,1.827899 -0.30465,-1.218599 -0.957471,-1.827899 -2.001984,-1.827899 -1.2186,0 -1.871421,0.674582 -2.415438,1.653813 h -0.04352 l -0.152325,-1.392685 h -1.457967 z"
-         style="font-family:'Source Code Variable';-inkscape-font-specification:'Source Code Variable';baseline-shift:baseline"
-         id="path320" />
+         d="m 216.30928,99.22261 -8.25787,58.56641 h -23.42656 l 11.53758,-81.992972 h 81.99297 l -11.53758,81.992972 h -23.42656 l 8.25786,-58.56641 h -5.85664 l -8.25786,58.56641 h -23.42656 l 8.25786,-58.56641 z"
+         style="font-family:'Corporation Games';-inkscape-font-specification:'Corporation Games Italic';stroke:#294242;stroke-opacity:1;stroke-width:4.90000001;stroke-dasharray:none"
+         id="path16261" />
     </g>
   </g>
 </svg>

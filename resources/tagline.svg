@@ -7,7 +7,7 @@
    viewBox="0 0 338.66666 33.866666"
    version="1.1"
    id="svg5"
-   inkscape:version="1.2.1 (9c6d41e410, 2022-07-14)"
+   inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
    sodipodi:docname="tagline.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
@@ -25,10 +25,10 @@
      inkscape:deskcolor="#505050"
      inkscape:document-units="mm"
      showgrid="false"
-     inkscape:zoom="0.67358087"
-     inkscape:cx="535.19928"
-     inkscape:cy="253.86707"
-     inkscape:window-width="1920"
+     inkscape:zoom="0.86454957"
+     inkscape:cx="547.68404"
+     inkscape:cy="60.146927"
+     inkscape:window-width="959"
      inkscape:window-height="1040"
      inkscape:window-x="0"
      inkscape:window-y="19"
@@ -36,6 +36,22 @@
      inkscape:current-layer="layer1" />
   <defs
      id="defs2">
+    <linearGradient
+       inkscape:collect="always"
+       id="linearGradient1236">
+      <stop
+         style="stop-color:#e85589;stop-opacity:1;"
+         offset="0"
+         id="stop1232" />
+      <stop
+         style="stop-color:#dedf4b;stop-opacity:1;"
+         offset="0.43807909"
+         id="stop2692" />
+      <stop
+         style="stop-color:#42d9ca;stop-opacity:1;"
+         offset="1"
+         id="stop1234" />
+    </linearGradient>
     <linearGradient
        inkscape:collect="always"
        id="linearGradient1647">
@@ -58,6 +74,25 @@
        y2="5.6308804"
        gradientUnits="userSpaceOnUse"
        gradientTransform="matrix(0.85671293,0,0,0.85671293,12.740499,7.4637239)" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient1236"
+       id="linearGradient1238"
+       x1="234.03925"
+       y1="14.153352"
+       x2="233.9879"
+       y2="23.598993"
+       gradientUnits="userSpaceOnUse" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient1236"
+       id="linearGradient9411"
+       gradientUnits="userSpaceOnUse"
+       x1="234.03925"
+       y1="14.153352"
+       x2="233.9879"
+       y2="23.598993"
+       gradientTransform="matrix(1.1235136,0,0,1.1235136,-5.3943816,-5.5366258)" />
   </defs>
   <g
      inkscape:label="Layer 1"
@@ -65,15 +100,15 @@
      id="layer1">
     <text
        xml:space="preserve"
-       style="font-size:16.9333px;font-family:'Font Awesome 6 Brands';-inkscape-font-specification:'Font Awesome 6 Brands';letter-spacing:-1.85978px;fill:#00ffff;fill-opacity:1;stroke:#280b0b;stroke-width:0.226671"
-       x="3.6734672"
-       y="23.238394"
-       id="text1466"
-       transform="rotate(0.1756011)"><tspan
+       style="font-style:italic;font-size:14.2686px;font-family:'Corporation Games';-inkscape-font-specification:'Corporation Games Italic';fill:url(#linearGradient9411);fill-opacity:1;stroke:#280b0b;stroke-width:0.997;stroke-dasharray:none"
+       x="2.4736066"
+       y="20.828531"
+       id="text403"
+       transform="scale(0.90870181,1.100471)"><tspan
          sodipodi:role="line"
-         id="tspan1464"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:16.9333px;font-family:'Source Code Variable';-inkscape-font-specification:'Source Code Variable';baseline-shift:baseline;fill:#00ffff;fill-opacity:1;stroke-width:0.226671"
-         x="3.6734672"
-         y="23.238394">- a Project Diva MegaMix+ Mod Manager</tspan></text>
+         id="tspan401"
+         style="font-size:14.2686px;fill:url(#linearGradient9411);fill-opacity:1;stroke:#294242;stroke-width:0.997;stroke-dasharray:none;stroke-opacity:1"
+         x="2.4736066"
+         y="20.828531">- a Project Diva Megamix+ mod manager</tspan></text>
   </g>
 </svg>
