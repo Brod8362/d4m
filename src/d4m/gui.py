@@ -203,6 +203,11 @@ def show_about(parent):
     qwidgets.QMessageBox.about(parent, "About d4m", about_str)
 
 
+def show_news(parent):
+    dialog = NewsHistoryDialog(parent=parent)
+    dialog.show()
+
+
 def on_increase_priority(selected, mod_manager: ModManager) -> int:
     return generic_priority_shift(selected[0], mod_manager, -1)
 
@@ -291,6 +296,40 @@ class DmmMigrateDialog(qwidgets.QDialog):
         self.setLayout(self.win_layout)
         self.setMinimumSize(350, 300)
         self.setWindowTitle("d4m - Migrate from DivaModManager")
+
+
+class NewsHistoryDialog(qwidgets.QDialog):
+    def __init__(self, parent=None):
+        super(NewsHistoryDialog, self).__init__(parent)
+        self.news = d4m.rss.retrieve_news()
+
+        self.window_layout = qwidgets.QVBoxLayout()
+
+        self.news_list_layout = qwidgets.QListWidget()
+
+        self.header_label = qwidgets.QLabel("Older News")
+        self.header_label.setToolTip("Double-click any entry to open")
+
+        self.close_button = qwidgets.QPushButton("Close")
+        self.close_button.setIcon(self.style().standardIcon(qwidgets.QStyle.SP_DialogCloseButton))
+        self.close_button.clicked.connect(lambda *_: self.close())
+
+        for entry in self.news:
+            # populate news entries
+            news_list_item = qwidgets.QListWidgetItem(f"{entry.title}\n{entry.description}", listview=self.news_list_layout)
+            news_list_item.setIcon(self.style().standardIcon(qwidgets.QStyle.SP_MessageBoxInformation))
+            news_list_item.setToolTip(entry.link)
+
+        self.window_layout.addWidget(self.header_label)
+        self.window_layout.addWidget(self.news_list_layout)
+        self.window_layout.addWidget(self.close_button)
+
+        # Slot 3 is the tooltip, which is the url
+        # see: https://doc.qt.io/qt-6/qt.html#ItemDataRole-enum
+        self.news_list_layout.itemDoubleClicked.connect(lambda item: QDesktopServices.openUrl(item.data(3)))
+        self.setLayout(self.window_layout)
+        self.setMinimumSize(450, 300)
+        self.setWindowTitle("d4m - News")
 
 
 class ModInstallDialog(qwidgets.QDialog):
@@ -507,9 +546,20 @@ class D4mGUI:
         # news button
         latest_news = d4m.rss.latest_news()
         if latest_news:
-            news_button = qwidgets.QPushButton(f"News: {latest_news.title}  -  {latest_news.description}")
-            news_button.clicked.connect(lambda *_: QDesktopServices.openUrl(latest_news.link))
-            news_button.setIcon(main_window.style().standardIcon(qwidgets.QStyle.SP_MessageBoxInformation))
+            news_layout = qwidgets.QHBoxLayout()
+
+            news_banner = qwidgets.QPushButton(f"News: {latest_news.title}  -  {latest_news.description}")
+            news_banner.clicked.connect(lambda *_: QDesktopServices.openUrl(latest_news.link))
+            news_banner.setIcon(main_window.style().standardIcon(qwidgets.QStyle.SP_MessageBoxInformation))
+            news_banner.setToolTip("Open this news entry in your browser")
+
+            old_news_button = qwidgets.QPushButton()
+            old_news_button.setIcon(main_window.style().standardIcon(qwidgets.QStyle.SP_FileDialogListView))
+            old_news_button.setToolTip("See old news")
+            old_news_button.clicked.connect(lambda *_: show_news(main_window))
+
+            news_layout.addWidget(news_banner, 1)
+            news_layout.addWidget(old_news_button)
 
         top_row = qwidgets.QHBoxLayout()
 
@@ -518,7 +568,7 @@ class D4mGUI:
         mod_table_and_buttons_layout.addWidget(mod_table, 1)
         mod_buttons = qwidgets.QHBoxLayout()
 
-        global statusbar # I don't like it either but this is the life we live
+        global statusbar  # I don't like it either but this is the life we live
         statusbar = qwidgets.QStatusBar()
         ver_str = f"d4m v{d4m.common.VERSION}"
         d4m_label = qwidgets.QLabel(ver_str)
@@ -752,8 +802,8 @@ class D4mGUI:
         # main_window.setWindowIcon(D4M_LOGO_PIXMAP)
         main_window.setStatusBar(statusbar)
 
-        if latest_news: # only if news exists
-            main_widget.addWidget(news_button)
+        if latest_news:  # only if news exists
+            main_widget.addLayout(news_layout)
 
         main_widget.addLayout(top_row)
         main_widget.addLayout(mod_table_and_buttons_layout)
