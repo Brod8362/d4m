@@ -330,7 +330,9 @@ class D4mGUI:
 
         # fill save data menu
         action_backup_save = QAction("Backup Save Data...", window)
-        action_backup_save.triggered.connect(lambda *_: show_generic_dialog(main_window, SaveDataBackupDialog, d4m_config))
+        action_backup_save.triggered.connect(
+            lambda *_: show_generic_dialog(main_window, SaveDataBackupDialog, d4m_config, d4m_logger)
+        )
         action_restore_save = QAction("Restore Save Data...", window)
         action_restore_save.setEnabled(False)
         # TODO: connect signal to open restore dialog
