@@ -27,6 +27,7 @@ from d4m.gui.dialogs.save_backup import SaveDataBackupDialog
 from d4m.gui.dialogs.news import NewsHistoryDialog
 from d4m.gui.util import favicon_qimage, show_d4m_infobox
 from d4m.manage import ModManager
+from d4m.gui.d4m_logging import D4mLogger
 import d4m.save_data
 
 if sys.platform == "win32":  # windows hack for svg because pyinstaller isn't cooperating
@@ -35,17 +36,7 @@ if sys.platform == "win32":  # windows hack for svg because pyinstaller isn't co
 else:
     D4M_ICON_DATA = files("d4m.res").joinpath("logo.svg").read_bytes()
 
-LOG_HISTORY = []
-
-
-def log_msg(content: str):
-    timestamp = strftime("%H:%M:%S")
-    LOG_HISTORY.append(f"[{timestamp}] {content}")
-    statusbar.showMessage(content)
-
-
-
-
+d4m_logger = D4mLogger(None)
 
 ##############################
 ### BUTTON CLICK FUNCTIONS ###
@@ -69,28 +60,28 @@ def on_toggle_mod(selections, mod_manager: ModManager):
     for mod in selections:
         if mod_manager.is_enabled(mod):
             mod_manager.disable(mod)
-            log_msg(f"Disabled {mod}")
+            d4m_logger.log_msg(f"Disabled {mod}")
         else:
             mod_manager.enable(mod)
-            log_msg(f"Enabled {mod}")
+            d4m_logger.log_msg(f"Enabled {mod}")
 
 
 def on_update_mod(selections, mod_manager: ModManager):
     # TODO: progress bar dialog
-    log_msg(f"Attempting to update {len(selections)} mods")
+    d4m_logger.log_msg(f"Attempting to update {len(selections)} mods")
     updated = 0
     for mod in selections:
         if mod.is_simple():
-            log_msg(f"{str(mod)} has an unknown origin and cannot be updated.")
+            d4m_logger.log_msg(f"{str(mod)} has an unknown origin and cannot be updated.")
         else:
             if mod.is_out_of_date():
-                log_msg(f"Updating {mod}...")
+                d4m_logger.log_msg(f"Updating {mod}...")
                 mod_manager.update(mod, fetch_thumbnail=True)
-                log_msg(f"{mod} updated successfully.")
+                d4m_logger.log_msg(f"{mod} updated successfully.")
                 updated += 1
             else:
-                log_msg(f"{mod} is already up to date.")
-    log_msg(f"Updated {updated} mods")
+                d4m_logger.log_msg(f"{mod} is already up to date.")
+    d4m_logger.log_msg(f"Updated {updated} mods")
 
 
 def on_delete_mod(selections, mod_manager: ModManager):
@@ -106,11 +97,11 @@ def on_delete_mod(selections, mod_manager: ModManager):
         for mod in selections:
             try:
                 mod_manager.delete_mod(mod)
-                log_msg(f"Deleted {mod}")
+                d4m_logger.log_msg(f"Deleted {mod}")
                 success += 1
             except Exception as e:
-                log_msg(f"Failed to delete {mod.name}: {e}")
-        log_msg(f"Deleted {success} mods")
+                d4m_logger.log_msg(f"Failed to delete {mod.name}: {e}")
+        d4m_logger.log_msg(f"Deleted {success} mods")
 
 
 def on_edit_mod(selections, mod_manager: ModManager):
@@ -204,13 +195,13 @@ class BackgroundUpdateWorker(PySide6.QtCore.QRunnable):
         self.on_complete = on_complete
 
     def run(self):
-        log_msg("Checking for updates...")
+        d4m_logger.log_msg("Checking for updates...")
         try:
             self.mod_manager.check_for_updates(get_thumbnails=True)
             self.populate(update_check=True)
-            log_msg("Update check complete.")
+            d4m_logger.log_msg("Update check complete.")
         except Exception as e:
-            log_msg(f"Update check failed: {e}")
+            d4m_logger.log_msg(f"Update check failed: {e}")
         self.updates_ready = True
         if self.on_complete:
             self.on_complete()
@@ -289,13 +280,14 @@ class D4mGUI:
         mod_table_and_buttons_layout.addWidget(mod_table, 1)
         mod_buttons = qwidgets.QHBoxLayout()
 
-        global statusbar  # I don't like it either but this is the life we live
         statusbar = qwidgets.QStatusBar()
+        d4m_logger.attach_statusbar(statusbar)
+
         ver_str = f"d4m v{d4m.common.VERSION}"
         d4m_label = qwidgets.QLabel(ver_str)
         d4m_label.setPixmap(D4M_LOGO_PIXMAP)
         d4m_label.setContentsMargins(0, 0, 0, 0)
-        log_msg(ver_str)
+        d4m_logger.log_msg(ver_str)
         window.setWindowTitle(ver_str)
 
         # Priority buttons
@@ -473,7 +465,7 @@ class D4mGUI:
 
         action_open_log = QAction("Open Log...", window)
         action_open_log.triggered.connect(
-            lambda *_: show_generic_dialog(main_window, LogDialog, LOG_HISTORY, statusbar))
+            lambda *_: show_generic_dialog(main_window, LogDialog, d4m_logger))
 
         action_migrate_dmm = QAction("Migrate from DivaModManager...", window)
         action_migrate_dmm.triggered.connect(
@@ -544,12 +536,12 @@ class D4mGUI:
         main_widget.addLayout(mod_table_and_buttons_layout)
         main_widget.addLayout(mod_buttons)
 
-        log_msg(f"Megamix @ {d4m.common.get_megamix_path()}")
+        d4m_logger.log_msg(f"Megamix @ {d4m.common.get_megamix_path()}")
 
         for sd_r in d4m.save_data.SAVE_DATA_TYPES:
             sd: d4m.save_data.MMSaveDataType = sd_r(d4m_config)
             if sd.exists():
-                log_msg(f"Found {sd.display_name()} save data at {sd.path()}")
+                d4m_logger.log_msg(f"Found {sd.display_name()} save data at {sd.path()}")
                 sd.backup(f"/tmp/save_data_{sd.type_name()}.zip")
 
         main_window.setMinimumSize(950, 500)
