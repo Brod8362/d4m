@@ -2,9 +2,9 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="256mm"
-   height="256mm"
-   viewBox="0 0 256 256"
+   width="128"
+   height="128"
+   viewBox="0 0 33.866667 33.866667"
    version="1.1"
    id="svg5"
    inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
@@ -25,12 +25,12 @@
      inkscape:deskcolor="#505050"
      inkscape:document-units="mm"
      showgrid="false"
-     inkscape:zoom="0.4284256"
-     inkscape:cx="571.86126"
-     inkscape:cy="270.7588"
-     inkscape:window-width="959"
+     inkscape:zoom="1.884167"
+     inkscape:cx="113.84341"
+     inkscape:cy="-9.5532934"
+     inkscape:window-width="1920"
      inkscape:window-height="1040"
-     inkscape:window-x="960"
+     inkscape:window-x="0"
      inkscape:window-y="19"
      inkscape:window-maximized="1"
      inkscape:current-layer="layer1" />
@@ -62,6 +62,36 @@
        y2="155.66431"
        gradientUnits="userSpaceOnUse"
        gradientTransform="translate(7.8138149,-5.5466061)" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient977"
+       id="linearGradient138"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="translate(7.8138149,-5.5466061)"
+       x1="138.49713"
+       y1="57.109653"
+       x2="140.16953"
+       y2="155.66431" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient977"
+       id="linearGradient140"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="translate(7.8138149,-5.5466061)"
+       x1="138.49713"
+       y1="57.109653"
+       x2="140.16953"
+       y2="155.66431" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient977"
+       id="linearGradient142"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="translate(7.8138149,-5.5466061)"
+       x1="138.49713"
+       y1="57.109653"
+       x2="140.16953"
+       y2="155.66431" />
   </defs>
   <g
      inkscape:label="Layer 1"
@@ -69,20 +99,20 @@
      id="layer1">
     <g
        aria-label="d4m"
-       transform="scale(0.89173427,1.1214103)"
+       transform="matrix(0.11554181,0,0,0.14530087,0.34840223,1.239739)"
        id="text186"
-       style="font-style:italic;font-size:119.944px;font-family:'Noto Sans Grantha';-inkscape-font-specification:'Noto Sans Grantha Italic';fill:url(#linearGradient979);stroke:#294242;stroke-width:4.90000001;stroke-opacity:1;stroke-dasharray:none">
+       style="font-style:italic;font-size:119.944px;font-family:'Noto Sans Grantha';-inkscape-font-specification:'Noto Sans Grantha Italic';fill:url(#linearGradient979);stroke:#294242;stroke-width:4.9;stroke-dasharray:none;stroke-opacity:1">
       <path
          d="m 40.610059,99.22261 -4.978144,35.13984 H 70.771759 L 75.749903,99.22261 Z M 20.463215,75.796048 H 79.029622 L 81.489411,58.226126 H 104.91597 L 90.918602,157.78902 H 8.9256334 Z"
-         style="font-family:'Corporation Games';-inkscape-font-specification:'Corporation Games Italic';stroke:#294242;stroke-opacity:1;stroke-width:4.90000001;stroke-dasharray:none"
+         style="font-family:'Corporation Games';-inkscape-font-specification:'Corporation Games Italic';fill:url(#linearGradient138);stroke:#294242;stroke-width:4.9;stroke-dasharray:none;stroke-opacity:1"
          id="path16257" />
       <path
          d="m 166.87923,75.796048 h 23.42656 l -11.53758,81.992972 h -23.42656 l 2.45979,-17.56993 H 99.235032 l 9.077788,-64.423042 h 23.42657 l -5.79808,40.996482 h 35.13985 z"
-         style="font-family:'Corporation Games';-inkscape-font-specification:'Corporation Games Italic';stroke:#294242;stroke-opacity:1;stroke-width:4.90000001;stroke-dasharray:none"
+         style="font-family:'Corporation Games';-inkscape-font-specification:'Corporation Games Italic';fill:url(#linearGradient140);stroke:#294242;stroke-width:4.9;stroke-dasharray:none;stroke-opacity:1"
          id="path16259" />
       <path
          d="m 216.30928,99.22261 -8.25787,58.56641 h -23.42656 l 11.53758,-81.992972 h 81.99297 l -11.53758,81.992972 h -23.42656 l 8.25786,-58.56641 h -5.85664 l -8.25786,58.56641 h -23.42656 l 8.25786,-58.56641 z"
-         style="font-family:'Corporation Games';-inkscape-font-specification:'Corporation Games Italic';stroke:#294242;stroke-opacity:1;stroke-width:4.90000001;stroke-dasharray:none"
+         style="font-family:'Corporation Games';-inkscape-font-specification:'Corporation Games Italic';fill:url(#linearGradient142);stroke:#294242;stroke-width:4.9;stroke-dasharray:none;stroke-opacity:1"
          id="path16261" />
     </g>
   </g>
