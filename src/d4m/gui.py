@@ -15,6 +15,7 @@ import PySide6.QtWidgets as qwidgets
 import d4m.api
 import d4m.common
 import d4m.manage
+import d4m.rss
 import packaging.version
 import requests.exceptions
 from PySide6.QtGui import QAction, QColor, QDesktopServices, QImage, QPixmap
@@ -416,7 +417,7 @@ class ModInstallDialog(qwidgets.QDialog):
                 self.install_button.setEnabled(True)
                 self.install_button.clicked.connect(lambda *_: on_install_click(results))
 
-        # Populate user interactable fields
+        # Populate user intractable fields
         self.search_layout.addWidget(self.mod_name_input)
         self.search_layout.addWidget(self.search_button)
         self.search_button.clicked.connect(populate_search_results)
@@ -500,13 +501,24 @@ class D4mGUI:
 
         main_widget = qwidgets.QVBoxLayout(window)
 
+        # build main elements
         menu_bar = qwidgets.QMenuBar()
+
+        # news button
+        latest_news = d4m.rss.latest_news()
+        if latest_news:
+            news_button = qwidgets.QPushButton(f"News: {latest_news.title}  -  {latest_news.description}")
+            news_button.clicked.connect(lambda *_: QDesktopServices.openUrl(latest_news.link))
+            news_button.setIcon(main_window.style().standardIcon(qwidgets.QStyle.SP_MessageBoxInformation))
+
         top_row = qwidgets.QHBoxLayout()
+
         mod_table_and_buttons_layout = qwidgets.QHBoxLayout()
         mod_table = qwidgets.QTableWidget()
         mod_table_and_buttons_layout.addWidget(mod_table, 1)
         mod_buttons = qwidgets.QHBoxLayout()
-        global statusbar
+
+        global statusbar # I don't like it either but this is the life we live
         statusbar = qwidgets.QStatusBar()
         ver_str = f"d4m v{d4m.common.VERSION}"
         d4m_label = qwidgets.QLabel(ver_str)
@@ -662,7 +674,9 @@ class D4mGUI:
         populate_modlist(update_check=False)
 
         def autoupdate(func, *args):
-            """Selected mods will automatically be passed in as first argument."""
+            """Call function func, passing in the currently selected mods as the first argument to the function.
+            *args will be passed in as the remainder of the arguments.
+            After func() returns, the mod list will be re-populated."""
             selected_rows = set(map(lambda x: x.row(), mod_table.selectedIndexes()))
             selected_mods = list(map(lambda i: mod_manager.mods[i], selected_rows))
             r = func(selected_mods, *args)
@@ -732,10 +746,14 @@ class D4mGUI:
                                      on_complete=lambda *_: update_mod_button.setEnabled(True))
         threadpool.start(buw)
 
-        # # Populate main GUI
+        ## Populate main GUI
+
         main_window.setMenuBar(menu_bar)
         # main_window.setWindowIcon(D4M_LOGO_PIXMAP)
         main_window.setStatusBar(statusbar)
+
+        if latest_news: # only if news exists
+            main_widget.addWidget(news_button)
 
         main_widget.addLayout(top_row)
         main_widget.addLayout(mod_table_and_buttons_layout)
@@ -757,6 +775,7 @@ def main():
 
     d4m_config = D4mConfig()
 
+    # determine megamix install path
     try:
         megamix_path = os.environ.get("D4M_INSTALL_DIR", d4m_config.get_diva_path())
         if not megamix_path:
@@ -778,6 +797,7 @@ def main():
         else:
             sys.exit(1)
 
+    # offer to install DML
     if not d4m.common.modloader_is_installed(megamix_path):
         content = f"DivaModLoader is not installed. Would you like d4m to install the latest version of DivaModLoader?"
         res = show_d4m_infobox(content, buttons=qwidgets.QMessageBox.Yes | qwidgets.QMessageBox.No, level="question")
@@ -789,10 +809,11 @@ def main():
                 show_d4m_infobox(f"Failed to install DivaModLoader:\n {format_exc()}", level="error")
                 sys.exit(0)
 
+    # check DML for updates
     dml_version, dml_enabled, dml_mods_dir = d4m.common.get_modloader_info(megamix_path)
-    if time.time() - d4m_config["last_dmm_update_check"] > 60 * 60:
+    if time.time() - d4m_config["last_dml_update_check"] > 60 * 60:
         try:
-            d4m_config["last_dmm_update_check"] = time.time()
+            d4m_config["last_dml_update_check"] = time.time()
             d4m_config.write()
             dml_latest, dml_download = d4m.manage.check_modloader_version()
             if dml_version < dml_latest:

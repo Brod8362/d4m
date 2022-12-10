@@ -7,7 +7,7 @@ CONFIG_PATH = os.path.join(appdirs.user_config_dir(), "d4m.toml")
 
 CONFIG_OPTIONS = [
     ("last_d4m_update_check", 0),
-    ("last_dmm_update_check", 0),
+    ("last_dml_update_check", 0),
 ]
 
 
