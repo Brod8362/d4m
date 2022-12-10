@@ -7,6 +7,7 @@ import d4m.api
 # from d4m.gui.main import log_msg
 from d4m.gui.util import favicon_qimage
 
+
 class ModInstallDialog(qwidgets.QDialog):
     def __init__(self, mod_manager=None, callback=None, parent=None):
         super(ModInstallDialog, self).__init__(parent)
@@ -147,4 +148,3 @@ class ModInstallDialog(qwidgets.QDialog):
         self.setLayout(self.win_layout)
         self.setMinimumSize(650, 350)
         self.setWindowTitle("d4m - Install new mods")
-

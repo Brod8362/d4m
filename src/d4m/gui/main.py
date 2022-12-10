@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import functools
 import os
 import subprocess
 import sys
@@ -7,28 +6,27 @@ import time
 from importlib.resources import files
 from sys import platform
 from time import strftime
-from traceback import format_exc, print_exc
+from traceback import format_exc
 
 import PySide6.QtConcurrent
 import PySide6.QtCore
 import PySide6.QtWidgets as qwidgets
-import d4m.api
-import d4m.common
-import d4m.manage
-import d4m.rss
 import packaging.version
 from PySide6.QtGui import QAction, QColor, QDesktopServices, QImage, QPixmap
-from d4m.global_config import D4mConfig
-from d4m.manage import ModManager
 
+import d4m.api
+import d4m.common
 # Import various d4m dialogs
 import d4m.gui.dialogs
-from d4m.gui.dialogs.news import NewsHistoryDialog
+import d4m.manage
+import d4m.rss
+from d4m.global_config import D4mConfig
 from d4m.gui.dialogs.log import LogDialog
-from d4m.gui.dialogs.mod_install import ModInstallDialog
 from d4m.gui.dialogs.migrate import DmmMigrateDialog
-
+from d4m.gui.dialogs.mod_install import ModInstallDialog
+from d4m.gui.dialogs.news import NewsHistoryDialog
 from d4m.gui.util import favicon_qimage
+from d4m.manage import ModManager
 
 if os.name == "nt":  # windows hack for svg because pyinstaller isn't cooperating
     with open(os.path.join(os.path.expandvars("%ProgramFiles(x86)%"), "d4m", "logo.svg"), "rb") as fd:
@@ -146,10 +144,6 @@ def on_edit_mod(selections, mod_manager: ModManager):
             show_d4m_infobox(f"Unable to do that on your platform ({platform})", level="error")
 
 
-def on_migrate_clicked(mod_manager, callback):
-    dialog = DmmMigrateDialog(mod_manager=mod_manager, callback=callback)
-    dialog.exec()
-
 
 def on_refresh_click(selections, mod_manager: ModManager):
     mod_manager.save_priority()
@@ -176,11 +170,6 @@ def open_mod_folder(selected):
     pass
 
 
-def show_log(parent):
-    dialog = LogDialog(LOG_HISTORY, statusbar, parent=parent)
-    dialog.show()
-
-
 def show_about(parent):
     about_str = f"""
     d4m v{d4m.common.VERSION}
@@ -192,8 +181,8 @@ def show_about(parent):
     qwidgets.QMessageBox.about(parent, "About d4m", about_str)
 
 
-def show_news(parent):
-    dialog = NewsHistoryDialog(parent=parent)
+def show_generic_dialog(parent, dialog_class, *args, **kwargs):
+    dialog = dialog_class(*args, **kwargs, parent=parent)
     dialog.show()
 
 
@@ -301,7 +290,7 @@ class D4mGUI:
             old_news_button = qwidgets.QPushButton()
             old_news_button.setIcon(main_window.style().standardIcon(qwidgets.QStyle.SP_FileDialogListView))
             old_news_button.setToolTip("See old news")
-            old_news_button.clicked.connect(lambda *_: show_news(main_window))
+            old_news_button.clicked.connect(lambda *_: show_generic_dialog(main_window, NewsHistoryDialog))
 
             news_layout.addWidget(news_banner, 1)
             news_layout.addWidget(old_news_button)
@@ -484,11 +473,11 @@ class D4mGUI:
         action_load_from.triggered.connect(lambda *_: autoupdate(install_from_archive, mod_manager))
 
         action_open_log = QAction("Open Log...", window)
-        action_open_log.triggered.connect(lambda *_: show_log(main_window))
+        action_open_log.triggered.connect(lambda *_: show_generic_dialog(main_window, LogDialog, LOG_HISTORY, statusbar))
 
         action_migrate_dmm = QAction("Migrate from DivaModManager...", window)
         action_migrate_dmm.triggered.connect(
-            lambda *_: on_migrate_clicked(mod_manager, populate_modlist(update_check=buw.updates_ready))
+            lambda *_: show_generic_dialog(None, DmmMigrateDialog, mod_manager=mod_manager, callback=populate_modlist(update_check=buw.updates_ready))
         )
 
         # connect mod context buttons (needs access to autoupdate)
