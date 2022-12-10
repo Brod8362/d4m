@@ -4,7 +4,6 @@ import subprocess
 import sys
 import time
 from importlib.resources import files
-from sys import platform
 from time import strftime
 from traceback import format_exc
 
@@ -27,8 +26,9 @@ from d4m.gui.dialogs.mod_install import ModInstallDialog
 from d4m.gui.dialogs.news import NewsHistoryDialog
 from d4m.gui.util import favicon_qimage
 from d4m.manage import ModManager
+import d4m.save_data
 
-if os.name == "nt":  # windows hack for svg because pyinstaller isn't cooperating
+if sys.platform == "win32":  # windows hack for svg because pyinstaller isn't cooperating
     with open(os.path.join(os.path.expandvars("%ProgramFiles(x86)%"), "d4m", "logo.svg"), "rb") as fd:
         D4M_ICON_DATA = fd.read()
 else:
@@ -133,16 +133,15 @@ def on_edit_mod(selections, mod_manager: ModManager):
     else:
         mod = selections[0]
         config_file_path = os.path.join(mod.path, "config.toml")
-        if platform == "win32":
+        if sys.platform == "win32":
             os.startfile(config_file_path)
-        elif platform == "linux":
+        elif sys.platform == "linux":
             try:
                 subprocess.Popen(["xdg-open", config_file_path])
             except IOError:
                 show_d4m_infobox(f"Failed to open mod config:\n{format_exc()}", level="error")
         else:
-            show_d4m_infobox(f"Unable to do that on your platform ({platform})", level="error")
-
+            show_d4m_infobox(f"Unable to do that on your platform ({sys.platform})", level="error")
 
 
 def on_refresh_click(selections, mod_manager: ModManager):
@@ -473,11 +472,13 @@ class D4mGUI:
         action_load_from.triggered.connect(lambda *_: autoupdate(install_from_archive, mod_manager))
 
         action_open_log = QAction("Open Log...", window)
-        action_open_log.triggered.connect(lambda *_: show_generic_dialog(main_window, LogDialog, LOG_HISTORY, statusbar))
+        action_open_log.triggered.connect(
+            lambda *_: show_generic_dialog(main_window, LogDialog, LOG_HISTORY, statusbar))
 
         action_migrate_dmm = QAction("Migrate from DivaModManager...", window)
         action_migrate_dmm.triggered.connect(
-            lambda *_: show_generic_dialog(None, DmmMigrateDialog, mod_manager=mod_manager, callback=populate_modlist(update_check=buw.updates_ready))
+            lambda *_: show_generic_dialog(None, DmmMigrateDialog, mod_manager=mod_manager,
+                                           callback=populate_modlist(update_check=buw.updates_ready))
         )
 
         # connect mod context buttons (needs access to autoupdate)
@@ -543,6 +544,14 @@ class D4mGUI:
         main_widget.addLayout(mod_table_and_buttons_layout)
         main_widget.addLayout(mod_buttons)
 
+        log_msg(f"Megamix @ {d4m.common.get_megamix_path()}")
+
+        for sd_r in d4m.save_data.SAVE_DATA_TYPES:
+            sd: d4m.save_data.MMSaveDataType = sd_r(d4m_config)
+            if sd.exists():
+                log_msg(f"Found {sd.display_name()} save data at {sd.path()}")
+                sd.backup(f"/tmp/save_data_{sd.type_name()}.zip")
+
         main_window.setMinimumSize(950, 500)
         main_window.show()
         sys.exit(qapp.exec())
@@ -561,7 +570,7 @@ def main():
 
     # determine megamix install path
     try:
-        megamix_path = os.environ.get("D4M_INSTALL_DIR", d4m_config.get_diva_path())
+        megamix_path = d4m_config.get_diva_path()
         if not megamix_path:
             raise RuntimeError("megamix path is None")
     except:
