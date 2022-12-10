@@ -25,6 +25,10 @@ Installation
 
 Requirements: `python >= 3.9`, `libarchive`
 
+### Steam Deck Users
+
+Proceed to [installing with Flatpak](#flatpak--pre-built-binary-)
+
 ### Linux
 
 [d4m is now available in the AUR!](https://aur.archlinux.org/packages/d4m-git)
@@ -69,7 +73,9 @@ python -m pip install -e .
 
 ### Flatpak (pre-built binary)
 
-Download the latest .flatpak from the [releases](https://github.com/Brod8362/d4m/releases) section and install it via `flatpak install`. (e.g, `flatpak install d4m-VERSION.flatpak`)
+Download the latest .flatpak from the [releases](https://github.com/Brod8362/d4m/releases) section and install it by double-clicking.
+
+Alternatively, you can install it with `flatpak install`. (e.g, `flatpak install d4m-VERSION.flatpak`)
 
 ### Flatpak (building)
 
