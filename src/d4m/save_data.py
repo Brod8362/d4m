@@ -1,10 +1,8 @@
 import os
 import sys
 
-import d4m.common
-import d4m.manage
-import libarchive.public
 import libarchive.constants
+import libarchive.public
 from d4m.global_config import D4mConfig
 
 

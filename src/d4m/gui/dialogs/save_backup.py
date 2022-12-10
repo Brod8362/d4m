@@ -48,9 +48,9 @@ class SaveDataBackupDialog(qwidgets.QDialog):
         f_dialog = qwidgets.QFileDialog()
         f_dialog.setAcceptMode(qwidgets.QFileDialog.AcceptSave)
         f_dialog.setFileMode(qwidgets.QFileDialog.AnyFile)
-        file = f_dialog.getSaveFileName(self, "Backup", os.path.expanduser("~"), filter="Zip Archive (*.zip)")
+        file = f_dialog.getSaveFileName(self, "Backup", os.path.expanduser("~"), filter="d4m Backup (*.d4mb)")
         if file:
-            self.output_file = file[0]
+            self.output_file = file[0] if file[0].endswith(".d4mb") else file[0] + ".d4mb"
             self.d4m_logger.log_msg(f"Backup target set to {self.output_file}")
         self.check_valid()
 
@@ -67,7 +67,7 @@ class SaveDataBackupDialog(qwidgets.QDialog):
 
         # Labels
         step_1_label = qwidgets.QLabel("1. Select data to backup:")
-        step_2_label = qwidgets.QLabel("2. Select destination file (zip):")
+        step_2_label = qwidgets.QLabel("2. Select destination file:")
         step_3_label = qwidgets.QLabel("3. Backup!")
 
         # Buttons
@@ -113,3 +113,14 @@ class SaveDataBackupDialog(qwidgets.QDialog):
         self.setLayout(self.layout)
         self.setFixedSize(450, 300)
         self.setWindowTitle("d4m - Backup Save Data")
+
+
+def save_data_restore(d4m_config: D4mConfig, d4m_logger: D4mLogger, parent=None):
+    f_dialog = qwidgets.QFileDialog()
+    f_dialog.setAcceptMode(qwidgets.QFileDialog.AcceptOpen)
+    f_dialog.setFileMode(qwidgets.QFileDialog.ExistingFile)
+    file = f_dialog.getSaveFileName(parent, "Backup", os.path.expanduser("~"), filter="d4m Backup (*.d4mb)")
+    if not file or not file[0]:
+        return
+    # TODO: auto detect type of data
+    show_d4m_infobox("unsupported")
