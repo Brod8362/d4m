@@ -316,7 +316,11 @@ class NewsHistoryDialog(qwidgets.QDialog):
 
         for entry in self.news:
             # populate news entries
-            news_list_item = qwidgets.QListWidgetItem(f"{entry.title} ({entry.published})\n{entry.description}", listview=self.news_list_layout)
+            if hasattr(entry, "published"):
+                news_list_item = qwidgets.QListWidgetItem(f"{entry.title} ({entry.published})\n{entry.description}", listview=self.news_list_layout)
+            else:
+                news_list_item = qwidgets.QListWidgetItem(f"{entry.title}\n{entry.description}",
+                                                          listview=self.news_list_layout)
             news_list_item.setIcon(self.style().standardIcon(qwidgets.QStyle.SP_MessageBoxInformation))
             news_list_item.setToolTip(entry.link)
 
