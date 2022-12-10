@@ -23,8 +23,9 @@ from d4m.global_config import D4mConfig
 from d4m.gui.dialogs.log import LogDialog
 from d4m.gui.dialogs.migrate import DmmMigrateDialog
 from d4m.gui.dialogs.mod_install import ModInstallDialog
+from d4m.gui.dialogs.save_backup import SaveDataBackupDialog
 from d4m.gui.dialogs.news import NewsHistoryDialog
-from d4m.gui.util import favicon_qimage
+from d4m.gui.util import favicon_qimage, show_d4m_infobox
 from d4m.manage import ModManager
 import d4m.save_data
 
@@ -43,20 +44,7 @@ def log_msg(content: str):
     statusbar.showMessage(content)
 
 
-def show_d4m_infobox(content: str, level: str = "info", buttons=qwidgets.QMessageBox.Ok):
-    d = {
-        "info": qwidgets.QMessageBox.Icon.Information,
-        "warn": qwidgets.QMessageBox.Icon.Warning,
-        "question": qwidgets.QMessageBox.Icon.Question,
-        "error": qwidgets.QMessageBox.Icon.Critical
-    }
-    icon = d.get(level, qwidgets.QMessageBox.Icon.NoIcon)
-    msgbox = qwidgets.QMessageBox()
-    msgbox.setText(content)
-    msgbox.setWindowTitle("d4m")
-    msgbox.setIcon(icon)
-    msgbox.setStandardButtons(buttons)
-    return msgbox.exec()
+
 
 
 ##############################
@@ -345,7 +333,18 @@ class D4mGUI:
 
         # create menus
         file_menu = menu_bar.addMenu("&File")
+        save_data_menu = menu_bar.addMenu("&Save Data")
         help_menu = menu_bar.addMenu("&Help")
+
+        # fill save data menu
+        action_backup_save = QAction("Backup Save Data...", window)
+        action_backup_save.triggered.connect(lambda *_: show_generic_dialog(main_window, SaveDataBackupDialog, d4m_config))
+        action_restore_save = QAction("Restore Save Data...", window)
+        action_restore_save.setEnabled(False)
+        # TODO: connect signal to open restore dialog
+
+        save_data_menu.addAction(action_backup_save)
+        save_data_menu.addAction(action_restore_save)
 
         # fill help menu
         action_github = QAction("GitHub", window)
@@ -361,6 +360,7 @@ class D4mGUI:
         help_menu.addAction(action_github)
         help_menu.addAction(action_bug_report)
         help_menu.addAction(action_about)
+
 
         ### Propagate top row
         dml_status_label = qwidgets.QLabel(f"DivaModLoader {dml_version}")

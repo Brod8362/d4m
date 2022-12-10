@@ -93,3 +93,10 @@ SAVE_DATA_TYPES = [
     VanillaSaveData,
     SongLimitPatchSaveData
 ]
+
+def inst(type_search: str, config: D4mConfig):
+    for x in SAVE_DATA_TYPES:
+        sd = x(config)
+        if sd.type_name() == type_search:
+            return sd
+    return None
