@@ -228,7 +228,7 @@ class D4mGUI:
 
         D4M_LOGO_PIXMAP = QPixmap()
         D4M_LOGO_PIXMAP.loadFromData(D4M_ICON_DATA)
-        D4M_LOGO_PIXMAP = D4M_LOGO_PIXMAP.scaled(32, 32)
+        D4M_LOGO_PIXMAP = D4M_LOGO_PIXMAP.scaled(48, 48)
         qapp.setWindowIcon(D4M_LOGO_PIXMAP)
 
         ## Start d4m update check
@@ -337,6 +337,10 @@ class D4mGUI:
         action_restore_save.triggered.connect(
             lambda *_: d4m.gui.dialogs.save_backup.save_data_restore(d4m_config, d4m_logger, parent=main_window)
         )
+
+        # Temporarily disable save data management while it's broken
+        action_restore_save.setEnabled(False)
+        action_backup_save.setEnabled(False)
 
         save_data_menu.addAction(action_backup_save)
         save_data_menu.addAction(action_restore_save)
