@@ -19,6 +19,7 @@ import d4m.gui.dialogs
 import d4m.manage
 import d4m.rss
 import d4m.save_data
+import d4m.steam
 from d4m.global_config import D4mConfig
 from d4m.gui.context import D4mGlobalContext
 from d4m.gui.d4m_logging import D4mLogger
@@ -225,7 +226,9 @@ class D4mGUI:
         main_window = qwidgets.QMainWindow()
         window = qwidgets.QWidget()
         main_window.setCentralWidget(window)
-        global_context = D4mGlobalContext(d4m_config, d4m_logger, mod_manager)
+
+        steam_user_info = d4m.steam.determine_steam_user_info()
+        global_context = D4mGlobalContext(d4m_config, d4m_logger, mod_manager, steam_user_info)
 
         D4M_LOGO_PIXMAP = QPixmap()
         D4M_LOGO_PIXMAP.loadFromData(D4M_ICON_DATA)
@@ -332,16 +335,17 @@ class D4mGUI:
         # fill save data menu
         action_backup_save = QAction("Backup Save Data...", window)
         action_backup_save.triggered.connect(
-            lambda *_: show_generic_dialog(main_window, SaveDataBackupDialog, d4m_config, d4m_logger)
+            lambda *_: show_generic_dialog(main_window, SaveDataBackupDialog, global_context)
         )
         action_restore_save = QAction("Restore Save Data...", window)
         action_restore_save.triggered.connect(
-            lambda *_: d4m.gui.dialogs.save_backup.save_data_restore(d4m_config, d4m_logger, parent=main_window)
+            lambda *_: d4m.gui.dialogs.save_backup.save_data_restore(global_context, parent=main_window)
         )
 
+        # TODO remove if this feature gets completed
         # Temporarily disable save data management while it's broken
-        action_restore_save.setEnabled(False)
-        action_backup_save.setEnabled(False)
+        # action_restore_save.setEnabled(False)
+        # action_backup_save.setEnabled(False)
 
         save_data_menu.addAction(action_backup_save)
         save_data_menu.addAction(action_restore_save)
@@ -548,10 +552,9 @@ class D4mGUI:
         d4m_logger.log_msg(f"Megamix @ {d4m.common.get_megamix_path()}")
 
         for sd_r in d4m.save_data.SAVE_DATA_TYPES:
-            sd: d4m.save_data.MMSaveDataType = sd_r(d4m_config)
+            sd: d4m.save_data.MMSaveDataType = sd_r(global_context)
             if sd.exists():
                 d4m_logger.log_msg(f"Found {sd.display_name()} save data at {sd.path()}")
-                sd.backup(f"/tmp/save_data_{sd.type_name()}.zip")
 
         main_window.setMinimumSize(950, 500)
         main_window.show()

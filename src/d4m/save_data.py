@@ -4,12 +4,43 @@ import sys
 import libarchive.constants
 import libarchive.public
 from d4m.global_config import D4mConfig
+from d4m.gui.context import D4mGlobalContext
+import io
+
+
+def platform_expand(game_type: str, context: D4mGlobalContext) -> str:
+    if sys.platform == "win32":
+        return os.path.expandvars(f"%APPDATA%\\{game_type}\\Project DIVA MEGA39's\\Steam\\{context.steam_info.id64}\\")
+    elif sys.platform == "linux":
+        diva_install_dir = context.config.get_diva_path()
+        save_file_loc = os.path.join(diva_install_dir, "..", "..", "compatdata", "1761390", "pfx", "drive_c",
+                                     "users", "steamuser", "AppData", "Roaming", game_type, "Project DIVA MEGA39's",
+                                     "Steam", context.steam_info.id64
+                                     )
+        return os.path.realpath(save_file_loc)
+    else:
+        raise RuntimeError(f"Cannot determine save data install location on your platform ({sys.platform})")
+
+
+def detect_backup_type(file_path: str) -> str:
+    with libarchive.public.file_reader(file_path) as la:
+        for entry in la:
+            if entry.filetype.IFDIR:
+                pass
+            else:
+                if entry.pathname == "d4m_meta":
+                    buffer = io.BytesIO()
+                    for block in entry.get_blocks():
+                        buffer.write(block)
+                    buffer.seek(0)
+                    type_str = buffer.read().decode("UTF-8")
+                    return type_str
 
 
 class MMSaveDataType:
 
-    def __init__(self, config: D4mConfig):
-        self.config = config
+    def __init__(self, context: D4mGlobalContext):
+        self.context = context
 
     def type_name(self) -> str:
         raise NotImplementedError()
@@ -24,12 +55,21 @@ class MMSaveDataType:
         raise NotImplementedError()
 
     def backup(self, output_file_path: str) -> None:
-        files = [os.path.join(dp, f) for dp, dn, filenames in os.walk(self.path()) for f in filenames]
+        prev_wd = os.getcwd()
+        # TODO yeah, this is jank as shit, but it's temporary
+        # changing working directory to avoid reading libarchive documentation
+        # i'm sure this will never go wrong
+        input_path = self.path()
+        os.chdir(input_path)
+        with open("d4m_meta", "w") as fd:
+            fd.write(self.type_name())
         libarchive.public.create_file(
             output_file_path,
             libarchive.constants.ARCHIVE_FORMAT_ZIP,
-            files
+            os.listdir(input_path)
         )
+        os.remove("d4m_meta")
+        os.chdir(prev_wd)
 
     def restore(self, input_file_path: str) -> None:
         extract_to = self.path()
@@ -55,15 +95,7 @@ class VanillaSaveData(MMSaveDataType):
         return "Vanilla"
 
     def path(self) -> str:
-        if sys.platform == "win32":
-            return os.path.expandvars("%APPDATA%\\SEGA\\Project Diva MEGA39's")
-        elif sys.platform == "linux":
-            diva_install_dir = self.config.get_diva_path()
-            save_file_loc = os.path.join(diva_install_dir, "..", "..", "compatdata", "1761390", "pfx", "drive_c",
-                                         "users", "steamuser", "AppData", "Roaming", "SEGA", "Project DIVA MEGA39's")
-            return os.path.realpath(save_file_loc)
-        else:
-            raise RuntimeError(f"Cannot determine save data install location on your platform ({sys.platform})")
+        return platform_expand("SEGA", self.context)
 
 
 class SongLimitPatchSaveData(MMSaveDataType):
@@ -75,16 +107,7 @@ class SongLimitPatchSaveData(MMSaveDataType):
         return "Song Limit Patch"
 
     def path(self) -> str:
-        if sys.platform == "win32":
-            return os.path.expandvars("%APPDATA%\\DIVA\\Project Diva MEGA39's")
-        elif sys.platform == "linux":
-            # this is kind of hacky, but I can't think of a better way, if you know of one please let me know
-            diva_install_dir = self.config.get_diva_path()
-            save_file_loc = os.path.join(diva_install_dir, "..", "..", "compatdata", "1761390", "pfx", "drive_c",
-                                         "users", "steamuser", "AppData", "Roaming", "DIVA", "Project DIVA MEGA39's")
-            return os.path.realpath(save_file_loc)
-        else:
-            raise RuntimeError(f"Cannot determine save data install location on your platform ({sys.platform})")
+        return platform_expand("DIVA", self.context)
 
 
 SAVE_DATA_TYPES = [
@@ -92,9 +115,10 @@ SAVE_DATA_TYPES = [
     SongLimitPatchSaveData
 ]
 
-def inst(type_search: str, config: D4mConfig):
+
+def inst(type_search: str, context: D4mGlobalContext):
     for x in SAVE_DATA_TYPES:
-        sd = x(config)
+        sd = x(context)
         if sd.type_name() == type_search:
             return sd
     return None

@@ -29,7 +29,7 @@ class SaveDataBackupDialog(qwidgets.QDialog):
 
     def do_backup(self):
         if self.output_file and self.backup_type:
-            save_data_repr = d4m.save_data.inst(self.backup_type, self.context.config)
+            save_data_repr = d4m.save_data.inst(self.backup_type, self.context)
             if not save_data_repr:
                 show_d4m_infobox("Backup failed (invalid type ID)", level="error")
                 self.context.logger.log_msg(f"Backup failed (invalid type ID {self.backup_type})")
@@ -80,7 +80,7 @@ class SaveDataBackupDialog(qwidgets.QDialog):
 
         # Generate radio buttons
         for index, save_type in enumerate(d4m.save_data.SAVE_DATA_TYPES):
-            sd = save_type(self.context.config)
+            sd = save_type(self.context)
             radio_button = qwidgets.QRadioButton(sd.display_name())
             if sd.exists():
                 radio_button.setEnabled(True)
@@ -120,5 +120,6 @@ def save_data_restore(context: D4mGlobalContext, parent=None):
     file = f_dialog.getSaveFileName(parent, "Backup", os.path.expanduser("~"), filter="d4m Backup (*.d4mb)")
     if not file or not file[0]:
         return
-    # TODO: auto-detect type of data
-    show_d4m_infobox("unsupported")
+
+    save_type = d4m.save_data.detect_backup_type(file[0])
+    show_d4m_infobox(f"Detected as {save_type}")
