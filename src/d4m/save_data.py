@@ -1,11 +1,14 @@
+import io
 import os
 import sys
+import time
 
 import libarchive.constants
 import libarchive.public
-from d4m.global_config import D4mConfig
+import toml
+
+import d4m.common
 from d4m.gui.context import D4mGlobalContext
-import io
 
 
 def platform_expand(game_type: str, context: D4mGlobalContext) -> str:
@@ -22,19 +25,18 @@ def platform_expand(game_type: str, context: D4mGlobalContext) -> str:
         raise RuntimeError(f"Cannot determine save data install location on your platform ({sys.platform})")
 
 
-def detect_backup_type(file_path: str) -> str:
+def detect_backup_info(file_path: str) -> dict:
     with libarchive.public.file_reader(file_path) as la:
         for entry in la:
             if entry.filetype.IFDIR:
                 pass
             else:
-                if entry.pathname == "d4m_meta":
+                if entry.pathname == "d4m_meta.toml":
                     buffer = io.BytesIO()
                     for block in entry.get_blocks():
                         buffer.write(block)
                     buffer.seek(0)
-                    type_str = buffer.read().decode("UTF-8")
-                    return type_str
+                    return toml.loads(buffer.read().decode("UTF-8"))
 
 
 class MMSaveDataType:
@@ -61,14 +63,20 @@ class MMSaveDataType:
         # i'm sure this will never go wrong
         input_path = self.path()
         os.chdir(input_path)
-        with open("d4m_meta", "w") as fd:
-            fd.write(self.type_name())
+        metadata = {
+            "type": self.type_name(),
+            "steam_id": self.context.steam_info.id64,
+            "timestamp": int(time.time()),
+            "d4m_version": d4m.common.VERSION
+        }
+        with open("d4m_meta.toml", "w") as fd:
+            toml.dump(metadata, fd)
         libarchive.public.create_file(
             output_file_path,
             libarchive.constants.ARCHIVE_FORMAT_ZIP,
             os.listdir(input_path)
         )
-        os.remove("d4m_meta")
+        os.remove("d4m_meta.toml")
         os.chdir(prev_wd)
 
     def restore(self, input_file_path: str) -> None:
@@ -77,8 +85,10 @@ class MMSaveDataType:
         with libarchive.public.file_reader(input_file_path) as la:
             for entry in la:
                 if entry.filetype.IFDIR:
-                    os.makedirs(os.path.join(extract_to, entry.pathname), exist_ok=True)
+                    continue
                 else:
+                    if entry.pathname == "d4m_meta.toml":
+                        continue
                     dest = os.path.join(extract_to, entry.pathname)
                     os.makedirs(os.path.dirname(dest), exist_ok=True)
                     with open(os.path.join(extract_to, entry.pathname), "xb") as fd:

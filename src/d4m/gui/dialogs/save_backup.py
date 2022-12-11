@@ -3,6 +3,7 @@ import os
 import PySide6.QtWidgets as qwidgets
 
 import d4m.save_data
+import datetime
 from d4m.gui.context import D4mGlobalContext
 from d4m.gui.util import show_d4m_infobox
 
@@ -117,9 +118,35 @@ def save_data_restore(context: D4mGlobalContext, parent=None):
     f_dialog = qwidgets.QFileDialog()
     f_dialog.setAcceptMode(qwidgets.QFileDialog.AcceptOpen)
     f_dialog.setFileMode(qwidgets.QFileDialog.ExistingFile)
-    file = f_dialog.getSaveFileName(parent, "Backup", os.path.expanduser("~"), filter="d4m Backup (*.d4mb)")
+    file = f_dialog.getOpenFileName(parent, "Backup", os.path.expanduser("~"), filter="d4m Backup (*.d4mb)")
     if not file or not file[0]:
         return
 
-    save_type = d4m.save_data.detect_backup_type(file[0])
-    show_d4m_infobox(f"Detected as {save_type}")
+    backup_info = d4m.save_data.detect_backup_info(file[0])
+    if not backup_info:
+        show_d4m_infobox(f"Could not determine save type, is this a valid backup?", level="error")
+        return
+
+    save_type = d4m.save_data.inst(backup_info["type"], context)
+    if not save_type:
+        show_d4m_infobox(f"Unsupported save type '{backup_info['type']}', was this backup made with a newer version of d4m?", level="error")
+        return
+
+    extra_info = {
+        "Backup Type": save_type.display_name(),
+        "Steam ID": backup_info["steam_id"],
+        "Created At": datetime.datetime.fromtimestamp(backup_info["timestamp"]).strftime("%c"),
+        "d4m Version": backup_info["d4m_version"]
+    }
+    v = "\n".join([f"{k}: {extra_info[k]}" for k in extra_info])
+    res = show_d4m_infobox(
+        f"Restoring a data backup will DELETE YOUR CURRENT SAVE DATA.\nAre you sure you want to do this?\n\n{v}",
+        level="question",
+        buttons=qwidgets.QMessageBox.Yes | qwidgets.QMessageBox.No
+    )
+    if res == qwidgets.QMessageBox.StandardButton.Yes:
+        try:
+            save_type.restore(file[0])
+            pass
+        except Exception as e:
+            show_d4m_infobox(f"Failed to restore save data: {e}")
