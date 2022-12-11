@@ -1,7 +1,7 @@
 import functools
 
-import d4m.gamebanana as gamebanana
-import d4m.dma as dma
+import d4m.api.gamebanana as gamebanana
+import d4m.api.dma as dma
 import d4m.manage
 import requests
 

@@ -3,7 +3,6 @@ from enum import Enum
 from threading import Thread
 
 from d4m.gui.context import D4mGlobalContext
-import d4m.api
 from d4m.manage import ModManager
 
 

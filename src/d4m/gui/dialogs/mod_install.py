@@ -3,7 +3,7 @@ from traceback import print_exc
 import PySide6.QtCore
 import PySide6.QtWidgets as qwidgets
 
-import d4m.api
+import d4m.api.api
 from d4m.gui.context import D4mGlobalContext
 # from d4m.gui.main import log_msg
 from d4m.gui.util import favicon_qimage
@@ -75,18 +75,18 @@ class ModInstallDialog(qwidgets.QDialog):
                 self.progress_bar.setValue(1)
 
                 if self.checkbox_search_gb.isChecked():
-                    gb_results = d4m.api.search_mods(self.mod_name_input.text(), origin="gamebanana")
+                    gb_results = d4m.api.api.search_mods(self.mod_name_input.text(), origin="gamebanana")
                     results.extend(gb_results)
                     self.progress_bar.setValue(2)
-                    d4m.api.multi_fetch_mod_data([(x["id"], x["category"]) for x in gb_results], origin="gamebanana")
+                    d4m.api.api.multi_fetch_mod_data([(x["id"], x["category"]) for x in gb_results], origin="gamebanana")
 
                 if self.checkbox_search_dma.isChecked():
                     self.progress_bar.setValue(3)
-                    dma_results = d4m.api.search_mods(self.mod_name_input.text(), origin="divamodarchive")
+                    dma_results = d4m.api.api.search_mods(self.mod_name_input.text(), origin="divamodarchive")
                     results.extend(dma_results)
                     self.progress_bar.setValue(4)
-                    d4m.api.multi_fetch_mod_data([(x["id"], x["category"]) for x in dma_results],
-                                                 origin="divamodarchive")
+                    d4m.api.api.multi_fetch_mod_data([(x["id"], x["category"]) for x in dma_results],
+                                                     origin="divamodarchive")
 
             except RuntimeError as e:
                 self.status_label.setText(f"Err: <strong color=red>{e}</strong>")
@@ -106,7 +106,7 @@ class ModInstallDialog(qwidgets.QDialog):
             self.found_mod_list.horizontalHeader().setStretchLastSection(True)
             self.found_mod_list.setRowCount(len(results))
             for index, mod_info in enumerate(results):
-                detailed_mod_info = d4m.api.fetch_mod_data(mod_info["id"], mod_info["category"], origin=mod_info[
+                detailed_mod_info = d4m.api.api.fetch_mod_data(mod_info["id"], mod_info["category"], origin=mod_info[
                     "origin"])  # should already be fetched and cached, no performance concerns here
                 mod_label = qwidgets.QTableWidgetItem(mod_info["name"])
                 mod_label.setToolTip(mod_info["name"])

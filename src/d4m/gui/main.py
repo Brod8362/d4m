@@ -12,7 +12,7 @@ import PySide6.QtWidgets as qwidgets
 import packaging.version
 from PySide6.QtGui import QAction, QColor, QDesktopServices, QImage, QPixmap
 
-import d4m.api
+import d4m.api.api
 import d4m.common
 # Import various d4m dialogs
 import d4m.gui.dialogs

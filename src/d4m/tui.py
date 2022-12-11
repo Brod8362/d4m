@@ -7,7 +7,7 @@ import colorama
 import packaging
 from simple_term_menu import TerminalMenu
 
-import d4m.api as api
+import d4m.api.api as api
 from d4m.common import (VERSION, get_modloader_info,
                         modloader_is_installed, fetch_latest_d4m_version)
 from d4m.global_config import D4mConfig

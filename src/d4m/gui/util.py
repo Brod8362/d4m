@@ -2,12 +2,12 @@ import functools
 
 from PySide6.QtGui import QImage
 
-import d4m.api
+import d4m.api.api
 import PySide6.QtWidgets as qwidgets
 
 FAVICONS = {
-    "divamodarchive": d4m.api.download_favicon("divamodarchive"),
-    "gamebanana": d4m.api.download_favicon("gamebanana")
+    "divamodarchive": d4m.api.api.download_favicon("divamodarchive"),
+    "gamebanana": d4m.api.api.download_favicon("gamebanana")
 }
 
 

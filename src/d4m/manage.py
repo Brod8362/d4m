@@ -4,8 +4,8 @@ import os
 
 import requests
 import packaging.version
-from d4m.divamod import DivaMod, DivaSimpleMod, UnmanageableModError, diva_mod_create
-import d4m.api as api
+from d4m.divamod import DivaMod, DivaSimpleMod, diva_mod_create
+import d4m.api.api as api
 import tempfile
 import shutil
 import libarchive.public
