@@ -147,6 +147,6 @@ def save_data_restore(context: D4mGlobalContext, parent=None):
     if res == qwidgets.QMessageBox.StandardButton.Yes:
         try:
             save_type.restore(file[0])
-            pass
+            show_d4m_infobox(f"Save data restored successfully.")
         except Exception as e:
-            show_d4m_infobox(f"Failed to restore save data: {e}")
+            show_d4m_infobox(f"Failed to restore save data: {e}", level="error")
