@@ -47,16 +47,16 @@ class ModInstallDialog(qwidgets.QDialog):
             self.status_label.setText(f"Preparing to install {len(selected_ids)} mod(s)")
             success = 0
             for index, mod_info in enumerate(selected_ids):
-                text = f"<strong>{index + 1}/{len(selected_ids)}... Installing mod {mod_info['name']} "
+                text = f"<strong>{index + 1}/{len(selected_ids)}... Installing mod {mod_info.name} "
                 self.status_label.setText(text)
-                if not context.mod_manager.mod_is_installed(mod_info["id"], origin=mod_info["origin"]):
+                if not context.mod_manager.mod_is_installed(mod_info.id, origin=mod_info.origin):
                     try:
-                        context.mod_manager.install_mod(mod_info["id"], mod_info["category"], fetch_thumbnail=True,
-                                                        origin=mod_info["origin"])
+                        context.mod_manager.install_mod(mod_info.id, mod_info.category, fetch_thumbnail=True,
+                                                        origin=mod_info.origin)
                         success += 1
                     except Exception as e:
                         print_exc()
-                        r = f"Failed to install {mod_info['origin']}: {e}"
+                        r = f"Failed to install {mod_info.origin}: {e}"
                         self.status_label.setText(text)
                         context.logger.log_msg(r)
                     self.progress_bar.setValue(index + 1)
@@ -78,14 +78,14 @@ class ModInstallDialog(qwidgets.QDialog):
                     gb_results = d4m.api.api.search_mods(self.mod_name_input.text(), origin="gamebanana")
                     results.extend(gb_results)
                     self.progress_bar.setValue(2)
-                    d4m.api.api.multi_fetch_mod_data([(x["id"], x["category"]) for x in gb_results], origin="gamebanana")
+                    d4m.api.api.multi_fetch_mod_data([(x.id, x.category) for x in gb_results], origin="gamebanana")
 
                 if self.checkbox_search_dma.isChecked():
                     self.progress_bar.setValue(3)
                     dma_results = d4m.api.api.search_mods(self.mod_name_input.text(), origin="divamodarchive")
                     results.extend(dma_results)
                     self.progress_bar.setValue(4)
-                    d4m.api.api.multi_fetch_mod_data([(x["id"], x["category"]) for x in dma_results],
+                    d4m.api.api.multi_fetch_mod_data([(x.id, x.category) for x in dma_results],
                                                      origin="divamodarchive")
 
             except RuntimeError as e:
@@ -106,20 +106,20 @@ class ModInstallDialog(qwidgets.QDialog):
             self.found_mod_list.horizontalHeader().setStretchLastSection(True)
             self.found_mod_list.setRowCount(len(results))
             for index, mod_info in enumerate(results):
-                detailed_mod_info = d4m.api.api.fetch_mod_data(mod_info["id"], mod_info["category"], origin=mod_info[
-                    "origin"])  # should already be fetched and cached, no performance concerns here
-                mod_label = qwidgets.QTableWidgetItem(mod_info["name"])
-                mod_label.setToolTip(mod_info["name"])
-                mod_author_label = qwidgets.QTableWidgetItem(mod_info["author"])
-                mod_author_label.setToolTip(mod_info["author"])
-                mod_id_label = qwidgets.QTableWidgetItem(str(mod_info["id"]))
+                # should already be fetched and cached, no performance concerns here
+                detailed_mod_info = d4m.api.api.fetch_mod_data(mod_info.id, mod_info.category, origin=mod_info.origin)
+                mod_label = qwidgets.QTableWidgetItem(mod_info.name)
+                mod_label.setToolTip(mod_info.name)
+                mod_author_label = qwidgets.QTableWidgetItem(mod_info.author)
+                mod_author_label.setToolTip(mod_info.author)
+                mod_id_label = qwidgets.QTableWidgetItem(str(mod_info.id))
 
-                fav = favicon_qimage(mod_info["origin"])
+                fav = favicon_qimage(mod_info.origin)
                 if fav:
                     mod_id_label.setData(PySide6.QtCore.Qt.DecorationRole, fav)
 
                 status = "Available"
-                if context.mod_manager.mod_is_installed(mod_info["id"], origin=mod_info["origin"]):
+                if context.mod_manager.mod_is_installed(mod_info.id, origin=mod_info.origin):
                     status = "Installed"
                 if detailed_mod_info["hash"] == "err":
                     status = "Unavailable (Error)"

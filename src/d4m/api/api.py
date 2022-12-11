@@ -5,6 +5,8 @@ import d4m.api.dma as dma
 import d4m.manage
 import requests
 
+from d4m.api.struct import ModAPIInfo, APISearchResult
+
 SUPPORTED_APIS = {
     "divamodarchive": dma,
     "gamebanana": gamebanana
@@ -15,7 +17,7 @@ class UnsupportedAPIError(Exception):
     pass
 
 
-def multi_fetch_mod_data(mod_info: "list[tuple[int, str]]", origin="gamebanana") -> "list[dict]":
+def multi_fetch_mod_data(mod_info: "list[tuple[int, str]]", origin="gamebanana") -> list[ModAPIInfo]:
     """Fetch data for multiple mods from the requested origin.
 
     Params:
@@ -29,7 +31,7 @@ def multi_fetch_mod_data(mod_info: "list[tuple[int, str]]", origin="gamebanana")
     return SUPPORTED_APIS[origin].multi_fetch_mod_data(mod_info)
 
 
-def fetch_mod_data(mod_id: int, category: str, origin: str = "gamebanana") -> "dict":
+def fetch_mod_data(mod_id: int, category: str, origin: str = "gamebanana") -> ModAPIInfo:
     """Fetch data for a mod from the requested origin.
 
     Params:
@@ -43,7 +45,7 @@ def fetch_mod_data(mod_id: int, category: str, origin: str = "gamebanana") -> "d
     return SUPPORTED_APIS[origin].fetch_mod_data(mod_id, category)
 
 
-def search_mods(query: str, origin: str = "gamebanana") -> "list[tuple[any,any]]":
+def search_mods(query: str, origin: str = "gamebanana") -> list[APISearchResult]:
     """Search for mods matching `query` on the requested origin.
     
     Params:

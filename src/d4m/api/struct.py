@@ -10,6 +10,10 @@ class ModAPIInfo:
     download_count: str
     like_count: str
 
+    def __getitem__(self, item):
+        return getattr(self, item)
+
+
 @dataclasses.dataclass
 class APISearchResult:
     name: str

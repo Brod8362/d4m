@@ -8,6 +8,7 @@ import packaging
 from simple_term_menu import TerminalMenu
 
 import d4m.api.api as api
+from d4m.api.struct import APISearchResult
 from d4m.common import (VERSION, get_modloader_info,
                         modloader_is_installed, fetch_latest_d4m_version)
 from d4m.global_config import D4mConfig
@@ -52,11 +53,11 @@ def menu_install(mod_manager: ModManager):
     else:
         options = ["Cancel"]
 
-        def mod_str_gen(m_t):
-            mod_name = m_t["name"].strip().replace("\n", "")
-            mod_author = m_t["author"].strip().replace("\n", "")
-            content = f"{mod_name} by {mod_author} [{m_t['origin']}]"
-            if m_t['id'] in installed_ids:
+        def mod_str_gen(m_t: APISearchResult):
+            mod_name = m_t.name.strip().replace("\n", "")
+            mod_author = m_t.author.strip().replace("\n", "")
+            content = f"{mod_name} by {mod_author} [{m_t.origin}]"
+            if m_t.id in installed_ids:
                 return f"(installed) {content}"
             return content
 
@@ -65,15 +66,15 @@ def menu_install(mod_manager: ModManager):
         choice = mod_search_menu.show()
         if 0 < choice < len(options):
             mod = found_mods[choice - 1]
-            if mod["id"] in installed_ids:
-                print(f"{mod['name']} is already installed.")
+            if mod.id in installed_ids:
+                print(f"{mod.name} is already installed.")
             else:
                 try:
-                    print(f"Installing {mod['name']} ({mod['id']})")
-                    mod_manager.install_mod(mod['id'], mod["category"], origin=mod['origin'])
-                    print(f"{colorama.Fore.GREEN}Installed {mod['name']}{colorama.Fore.RESET}")
+                    print(f"Installing {mod.name} ({mod.id})")
+                    mod_manager.install_mod(mod.id, mod.category, origin=mod.origin)
+                    print(f"{colorama.Fore.GREEN}Installed {mod.name}{colorama.Fore.RESET}")
                 except Exception as e:
-                    print(f"{colorama.Fore.RED}Failed to install {mod['name']}{colorama.Fore.RESET}({e})")
+                    print(f"{colorama.Fore.RED}Failed to install {mod.name}{colorama.Fore.RESET}({e})")
                     print_exc()
 
 
