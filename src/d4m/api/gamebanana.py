@@ -1,6 +1,8 @@
 import requests
 from traceback import format_exc
 
+from d4m.api.struct import ModAPIInfo, APISearchResult
+
 mod_info_cache = {}
 
 GB_BASE_DOMAIN = "https://api.gamebanana.com"
@@ -39,26 +41,25 @@ def multi_fetch_mod_data(mod_info: "list[tuple[int, str]]") -> "list[dict]":
             mod_id = need_fetch[index][0]
             try:
                 files = sorted(elem[0].values(), key=lambda x: x["_tsDateAdded"], reverse=True)
-                obj = {
-                    "id": mod_id,
-                    "hash": files[0]["_sMd5Checksum"],
-                    "image": elem[1],
-                    "download": files[0]["_sDownloadUrl"],
-                    "download_count": elem[3],
-                    "like_count": elem[2]
-                }
+                obj = ModAPIInfo(
+                    id=mod_id,
+                    hash=files[0]["_sMd5Checksum"],
+                    image=elem[1],
+                    download=files[0]["_sDownloadUrl"],
+                    download_count=elem[3],
+                    like_count=elem[2]
+                )
                 mod_info_cache[mod_id] = obj
                 mod_data.append(obj)
             except:
-                obj = {
-                    "id": mod_id,
-                    "hash": "err",
-                    "image": "err",
-                    "download": "err",
-                    "download_count": "err",
-                    "like_count": "err",
-                    "error": format_exc()
-                }
+                obj = ModAPIInfo(
+                    id=0,
+                    hash="err",
+                    image="err",
+                    download="err",
+                    download_count="err",
+                    like_count="err"
+                )
                 mod_info_cache[mod_id] = obj
                 mod_data.append(obj)
     return mod_data
@@ -90,13 +91,13 @@ def search_mods(query: str):
     j = resp.json()
 
     def map_mod(ers):
-        obj = {
-            "name": ers['_sName'],
-            "id": ers['_idRow'],
-            "author": ers['_aSubmitter']['_sName'],
-            "category": ers['_sModelName'],
-            "origin": "gamebanana"
-        }
+        obj = APISearchResult(
+            name=ers['_sName'],
+            id=ers['_idRow'],
+            author=ers['_aSubmitter']['_sName'],
+            category=ers['_sModelName'],
+            origin="gamebanana"
+        )
         return obj
 
     return list(map(map_mod, j))
