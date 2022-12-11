@@ -157,7 +157,7 @@ def do_update_all(mod_manager: ModManager):
                 print(f"{colorama.Fore.RED}Failed to update {mod.name}: {e}{colorama.Fore.RESET}")
 
 
-def edit_d4m_config(*args):
+def edit_d4m_config(*_args):
     editor = os.environ.get("EDITOR", "nano")
     subprocess.run([editor, os.path.expanduser("~/.config/d4m.toml")])
 

@@ -23,8 +23,6 @@ def multi_fetch_mod_data(mod_info: "list[tuple[int, str]]", origin="gamebanana")
     Params:
         mod_info - list of tuples with the first value being the mod id and the second value being the mod category.
         origin - origin API to use (default: gamebanana)
-
-    Returns: a list of dicts with the keys id, hash, image, download, download_count, like_count
     """
     if origin not in SUPPORTED_APIS.keys():
         raise UnsupportedAPIError(origin)
@@ -37,8 +35,6 @@ def fetch_mod_data(mod_id: int, category: str, origin: str = "gamebanana") -> Mo
     Params:
         mod_id - mod id to request data for
         origin - origin API to use (default: gamebanana)
-
-    Returns: a dict with the keys id, hash, image, download, download_count, like_count
     """
     if origin not in SUPPORTED_APIS.keys():
         raise UnsupportedAPIError(origin)

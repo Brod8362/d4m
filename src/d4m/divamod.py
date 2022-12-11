@@ -26,7 +26,7 @@ class DivaSimpleMod:
             try:
                 self.version = packaging.version.Version(data["version"])
             except packaging.version.InvalidVersion:
-                #mod version is unparseable
+                # mod version is unparseable
                 pass
             except KeyError:
                 # mod does not have a version specified in the config
@@ -85,7 +85,8 @@ class DivaSimpleMod:
                     if "gamebanana" in homepage:
                         potential_id = homepage.split("/")[-1]
                         try:
-                            api.fetch_mod_data(potential_id, "Mod", origin="gamebanana") #TODO: maybe don't assume mod here?
+                            api.fetch_mod_data(potential_id, "Mod",
+                                               origin="gamebanana")  # TODO: maybe don't assume mod here?
                             with open(os.path.join(self.path, "modinfo.toml"), "w", encoding="UTF-8") as d4m_fd:
                                 d4m_mod_data = {
                                     "id": potential_id,
@@ -114,8 +115,8 @@ class DivaMod(DivaSimpleMod):
                 mod_data = toml.load(moddata_fd)
                 self.id = mod_data["id"]
                 self.hash = mod_data["hash"]
-                self.origin = mod_data.get("origin", "gamebanana") #gamebanana compat
-                self.category = mod_data.get("category", "Mod") #gamebanana compat
+                self.origin = mod_data.get("origin", "gamebanana")  # gamebanana compat
+                self.category = mod_data.get("category", "Mod")  # gamebanana compat
         except (IOError, KeyError):
             raise UnmanageableModError
 

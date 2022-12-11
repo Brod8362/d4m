@@ -17,7 +17,7 @@ def get_vdf_path():
         return os.path.expanduser("~/.local/share/Steam/config/libraryfolders.vdf")
     elif platform == "win32":
         import winreg
-        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, "SOFTWARE\WOW6432Node\Valve\Steam") as steam_key:
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, "SOFTWARE\\WOW6432Node\\Valve\\Steam") as steam_key:
             return os.path.join(winreg.QueryValueEx(steam_key, "InstallPath")[0],
                                 os.path.join("config", "libraryfolders.vdf"))
     elif platform == "darwin":  # TODO: macOS, where is the steam install directory?

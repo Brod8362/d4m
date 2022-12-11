@@ -104,7 +104,7 @@ def on_delete_mod(selections, mod_manager: ModManager):
         d4m_logger.log_msg(f"Deleted {success} mods")
 
 
-def on_edit_mod(selections, mod_manager: ModManager):
+def on_edit_mod(selections, _mod_manager: ModManager):
     if len(selections) == 0:
         show_d4m_infobox("Select a mod to edit.", level="warn")
     elif len(selections) > 1:

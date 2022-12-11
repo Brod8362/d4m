@@ -120,5 +120,5 @@ def save_data_restore(context: D4mGlobalContext, parent=None):
     file = f_dialog.getSaveFileName(parent, "Backup", os.path.expanduser("~"), filter="d4m Backup (*.d4mb)")
     if not file or not file[0]:
         return
-    # TODO: auto detect type of data
+    # TODO: auto-detect type of data
     show_d4m_infobox("unsupported")

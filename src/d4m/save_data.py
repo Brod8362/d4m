@@ -78,7 +78,7 @@ class SongLimitPatchSaveData(MMSaveDataType):
         if sys.platform == "win32":
             return os.path.expandvars("%APPDATA%\\DIVA\\Project Diva MEGA39's")
         elif sys.platform == "linux":
-            # this is kind of hacky but I can't think of a better way, if you know of one please let me know
+            # this is kind of hacky, but I can't think of a better way, if you know of one please let me know
             diva_install_dir = self.config.get_diva_path()
             save_file_loc = os.path.join(diva_install_dir, "..", "..", "compatdata", "1761390", "pfx", "drive_c",
                                          "users", "steamuser", "AppData", "Roaming", "DIVA", "Project DIVA MEGA39's")
