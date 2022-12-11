@@ -62,7 +62,7 @@ class ModManager:
     def fetch_thumbnail(self, mod: DivaMod, force=False):
         if force or not mod.has_thumbnail():
             data = api.fetch_mod_data(mod.id, mod.category, origin=mod.origin)
-            img_url = data["image"]
+            img_url = data.image
             resp = requests.get(img_url)
             if resp.status_code == 200:
                 with open(os.path.join(mod.path, "preview.png"), "wb") as preview_fd:
@@ -88,7 +88,7 @@ class ModManager:
                     origin="gamebanana"):  # mod_id and hash are used for modinfo.toml
         data = api.fetch_mod_data(mod_id, category, origin=origin)
         with tempfile.TemporaryDirectory(suffix="-d4m") as tempdir:
-            api.download_and_extract_mod(data["download"], tempdir)
+            api.download_and_extract_mod(data.download, tempdir)
             extracted = os.listdir(tempdir)
             if "config.toml" in extracted:
                 mod_folder_name = os.path.join(self.mods_path,
@@ -100,13 +100,13 @@ class ModManager:
             else:
                 raise RuntimeError("Failed to install mod: archive directory unusable")
             with open(os.path.join(mod_folder_name, "modinfo.toml"), "w") as modinfo_fd:
-                data = {
+                data_inner = {
                     "id": mod_id,
-                    "hash": data["hash"],
+                    "hash": data.hash,
                     "origin": origin,
                     "category": category
                 }
-                toml.dump(data, modinfo_fd)
+                toml.dump(data_inner, modinfo_fd)
             new_mod = diva_mod_create(mod_folder_name)
 
             self.mods.append(new_mod)

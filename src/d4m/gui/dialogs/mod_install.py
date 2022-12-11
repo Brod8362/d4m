@@ -121,11 +121,11 @@ class ModInstallDialog(qwidgets.QDialog):
                 status = "Available"
                 if context.mod_manager.mod_is_installed(mod_info.id, origin=mod_info.origin):
                     status = "Installed"
-                if detailed_mod_info["hash"] == "err":
+                if detailed_mod_info.hash == "err":
                     status = "Unavailable (Error)"
                 mod_installed_label = qwidgets.QTableWidgetItem(status)
                 mod_info_label = qwidgets.QTableWidgetItem(
-                    f"❤️{detailed_mod_info['like_count']} ⬇️{detailed_mod_info['download_count']}")
+                    f"❤️{detailed_mod_info.like_count} ⬇️{detailed_mod_info.download_count}")
                 self.found_mod_list.setItem(index, 0, mod_label)
                 self.found_mod_list.setItem(index, 1, mod_author_label)
                 self.found_mod_list.setItem(index, 2, mod_id_label)

@@ -97,7 +97,7 @@ def search_mods(query: str):
 
 
 def download_favicon():
-    r = requests.get("https://divamodarchive.xyz/favicon.ico")
+    r = requests.get("https://divamodarchive.com/favicon.ico")
     if r.status_code != 200:
         return None
     return r.content

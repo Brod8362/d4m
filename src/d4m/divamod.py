@@ -120,7 +120,7 @@ class DivaMod(DivaSimpleMod):
             raise UnmanageableModError
 
     def is_out_of_date(self):
-        return self.modinfo != None and self.hash != self.modinfo["hash"]
+        return self.modinfo is not None and self.hash != self.modinfo.hash
 
     def __eq__(self, other):
         return type(self) == type(other) and self.id == other.id
