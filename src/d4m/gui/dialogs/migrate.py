@@ -1,9 +1,10 @@
-import PySide6.QtCore
 import PySide6.QtWidgets as qwidgets
+
+from d4m.gui.context import D4mGlobalContext
 
 
 class DmmMigrateDialog(qwidgets.QDialog):
-    def __init__(self, mod_manager=None, callback=None, parent=None):
+    def __init__(self, context: D4mGlobalContext = None, callback=None, parent=None):
         super(DmmMigrateDialog, self).__init__(parent)
         self.win_layout = qwidgets.QVBoxLayout()
 
@@ -12,7 +13,7 @@ class DmmMigrateDialog(qwidgets.QDialog):
         self.start_button = qwidgets.QPushButton("Start")
 
         def migrate():
-            eligible = [m for m in mod_manager.mods if m.can_attempt_dmm_migration()]
+            eligible = [m for m in context.mod_manager.mods if m.can_attempt_dmm_migration()]
             successful_count = 0
             self.progress_bar.setRange(0, len(eligible))
             self.progress_log.append(f"{len(eligible)} mod(s) are eligible for migration\n")

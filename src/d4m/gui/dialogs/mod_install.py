@@ -4,13 +4,16 @@ import PySide6.QtCore
 import PySide6.QtWidgets as qwidgets
 
 import d4m.api
+from d4m.gui.context import D4mGlobalContext
 # from d4m.gui.main import log_msg
 from d4m.gui.util import favicon_qimage
 
 
 class ModInstallDialog(qwidgets.QDialog):
-    def __init__(self, mod_manager=None, callback=None, parent=None):
+    def __init__(self, context: D4mGlobalContext = None, parent=None):
         super(ModInstallDialog, self).__init__(parent)
+
+        self.context = context
 
         self.win_layout = qwidgets.QVBoxLayout()
         self.search_layout = qwidgets.QHBoxLayout()
@@ -46,16 +49,16 @@ class ModInstallDialog(qwidgets.QDialog):
             for index, mod_info in enumerate(selected_ids):
                 text = f"<strong>{index + 1}/{len(selected_ids)}... Installing mod {mod_info['name']} "
                 self.status_label.setText(text)
-                if not mod_manager.mod_is_installed(mod_info["id"], origin=mod_info["origin"]):
+                if not context.mod_manager.mod_is_installed(mod_info["id"], origin=mod_info["origin"]):
                     try:
-                        mod_manager.install_mod(mod_info["id"], mod_info["category"], fetch_thumbnail=True,
-                                                origin=mod_info["origin"])
+                        context.mod_manager.install_mod(mod_info["id"], mod_info["category"], fetch_thumbnail=True,
+                                                        origin=mod_info["origin"])
                         success += 1
                     except Exception as e:
                         print_exc()
                         r = f"Failed to install {mod_info['origin']}: {e}"
                         self.status_label.setText(text)
-                        log_msg(r)
+                        context.logger.log_msg(r)
                     self.progress_bar.setValue(index + 1)
             # when all is done
             if success == len(selected_ids):
@@ -116,7 +119,7 @@ class ModInstallDialog(qwidgets.QDialog):
                     mod_id_label.setData(PySide6.QtCore.Qt.DecorationRole, fav)
 
                 status = "Available"
-                if mod_manager.mod_is_installed(mod_info["id"], origin=mod_info["origin"]):
+                if context.mod_manager.mod_is_installed(mod_info["id"], origin=mod_info["origin"]):
                     status = "Installed"
                 if detailed_mod_info["hash"] == "err":
                     status = "Unavailable (Error)"

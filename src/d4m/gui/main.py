@@ -4,7 +4,6 @@ import subprocess
 import sys
 import time
 from importlib.resources import files
-from time import strftime
 from traceback import format_exc
 
 import PySide6.QtConcurrent
@@ -19,16 +18,17 @@ import d4m.common
 import d4m.gui.dialogs
 import d4m.manage
 import d4m.rss
+import d4m.save_data
 from d4m.global_config import D4mConfig
+from d4m.gui.context import D4mGlobalContext
+from d4m.gui.d4m_logging import D4mLogger
 from d4m.gui.dialogs.log import LogDialog
 from d4m.gui.dialogs.migrate import DmmMigrateDialog
 from d4m.gui.dialogs.mod_install import ModInstallDialog
-from d4m.gui.dialogs.save_backup import SaveDataBackupDialog
 from d4m.gui.dialogs.news import NewsHistoryDialog
+from d4m.gui.dialogs.save_backup import SaveDataBackupDialog
 from d4m.gui.util import favicon_qimage, show_d4m_infobox
 from d4m.manage import ModManager
-from d4m.gui.d4m_logging import D4mLogger
-import d4m.save_data
 
 if sys.platform == "win32":  # windows hack for svg because pyinstaller isn't cooperating
     with open(os.path.join(os.path.expandvars("%ProgramFiles(x86)%"), "d4m", "logo.svg"), "rb") as fd:
@@ -51,8 +51,8 @@ def on_dml_toggle_click(status_label, mod_manager: ModManager):
         status_label.setText("ENABLED")
 
 
-def on_install_mod(_, mod_manager: ModManager, callback):
-    dialog = ModInstallDialog(mod_manager=mod_manager, callback=callback)
+def on_install_mod(_, context: D4mGlobalContext):
+    dialog = ModInstallDialog(context=context)
     dialog.exec()
 
 
@@ -123,12 +123,12 @@ def on_edit_mod(selections, mod_manager: ModManager):
             show_d4m_infobox(f"Unable to do that on your platform ({sys.platform})", level="error")
 
 
-def on_refresh_click(selections, mod_manager: ModManager):
+def on_refresh_click(_selections, mod_manager: ModManager):
     mod_manager.save_priority()
     mod_manager.reload()
 
 
-def install_from_archive(selected, mod_manager: ModManager):
+def install_from_archive(_selected, mod_manager: ModManager):
     dialog = qwidgets.QFileDialog()
     if dialog.exec():
         file_names = dialog.selectedFiles()
@@ -225,6 +225,7 @@ class D4mGUI:
         main_window = qwidgets.QMainWindow()
         window = qwidgets.QWidget()
         main_window.setCentralWidget(window)
+        global_context = D4mGlobalContext(d4m_config, d4m_logger, mod_manager)
 
         D4M_LOGO_PIXMAP = QPixmap()
         D4M_LOGO_PIXMAP.loadFromData(D4M_ICON_DATA)
@@ -476,7 +477,7 @@ class D4mGUI:
 
         action_migrate_dmm = QAction("Migrate from DivaModManager...", window)
         action_migrate_dmm.triggered.connect(
-            lambda *_: show_generic_dialog(None, DmmMigrateDialog, mod_manager=mod_manager,
+            lambda *_: show_generic_dialog(None, DmmMigrateDialog, context=global_context,
                                            callback=populate_modlist(update_check=buw.updates_ready))
         )
 
@@ -496,7 +497,7 @@ class D4mGUI:
 
         ### Propagate action buttons
         install_mod_button = qwidgets.QPushButton("Install Mods...")
-        install_mod_button.clicked.connect(lambda *_: autoupdate(on_install_mod, mod_manager, populate_modlist))
+        install_mod_button.clicked.connect(lambda *_: autoupdate(on_install_mod, global_context))
 
         toggle_mod_button = qwidgets.QPushButton("Toggle Selected")
         toggle_mod_button.clicked.connect(lambda *_: autoupdate(on_toggle_mod, mod_manager))
@@ -527,7 +528,8 @@ class D4mGUI:
         mod_buttons.addWidget(refresh_mod_button)
 
         buw = BackgroundUpdateWorker(mod_manager, populate_modlist,
-                                     on_complete=lambda *_: update_mod_button.setEnabled(True))
+                                     on_complete=lambda *_: update_mod_button.setEnabled(True),
+                                     parent=main_window)
         threadpool.start(buw)
 
         ## Populate main GUI

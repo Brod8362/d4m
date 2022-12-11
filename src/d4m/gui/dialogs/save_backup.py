@@ -1,11 +1,10 @@
-import PySide6.QtCore
+import os
+
 import PySide6.QtWidgets as qwidgets
 
-from d4m.global_config import D4mConfig
 import d4m.save_data
-from d4m.gui.d4m_logging import D4mLogger
+from d4m.gui.context import D4mGlobalContext
 from d4m.gui.util import show_d4m_infobox
-import os
 
 
 class QHLine(qwidgets.QFrame):
@@ -25,23 +24,23 @@ class SaveDataBackupDialog(qwidgets.QDialog):
 
     def radio_clicked(self, s_type: str):
         self.backup_type = s_type
-        self.d4m_logger.log_msg(f"Set backup type to {self.backup_type}")
+        self.context.logger.log_msg(f"Set backup type to {self.backup_type}")
         self.check_valid()
 
     def do_backup(self):
         if self.output_file and self.backup_type:
-            save_data_repr = d4m.save_data.inst(self.backup_type, self.d4m_config)
+            save_data_repr = d4m.save_data.inst(self.backup_type, self.context.config)
             if not save_data_repr:
                 show_d4m_infobox("Backup failed (invalid type ID)", level="error")
-                self.d4m_logger.log_msg(f"Backup failed (invalid type ID {self.backup_type})")
+                self.context.logger.log_msg(f"Backup failed (invalid type ID {self.backup_type})")
                 self.close()
             try:
                 save_data_repr.backup(self.output_file)
                 show_d4m_infobox("Backup completed successfully.")
-                self.d4m_logger.log_msg(f"Backup OK ({self.output_file})")
+                self.context.logger.log_msg(f"Backup OK ({self.output_file})")
             except Exception as e:
                 show_d4m_infobox(f"Backup failed ({e})", level="error")
-                self.d4m_logger.log_msg(f"Exception attempting backup: {e}")
+                self.context.logger.log_msg(f"Exception attempting backup: {e}")
         self.close()
 
     def open_file_dialog(self) -> None:
@@ -51,15 +50,14 @@ class SaveDataBackupDialog(qwidgets.QDialog):
         file = f_dialog.getSaveFileName(self, "Backup", os.path.expanduser("~"), filter="d4m Backup (*.d4mb)")
         if file:
             self.output_file = file[0] if file[0].endswith(".d4mb") else file[0] + ".d4mb"
-            self.d4m_logger.log_msg(f"Backup target set to {self.output_file}")
+            self.context.logger.log_msg(f"Backup target set to {self.output_file}")
         self.check_valid()
 
-    def __init__(self, d4m_config: D4mConfig, d4m_logger: D4mLogger, parent=None):
+    def __init__(self, d4m_context: D4mGlobalContext, parent=None):
         self.backup_type = None
         self.output_file = None
         super(SaveDataBackupDialog, self).__init__(parent)
-        self.d4m_config = d4m_config
-        self.d4m_logger = d4m_logger
+        self.context = d4m_context
 
         # Layouts
         self.layout = qwidgets.QVBoxLayout()
@@ -82,7 +80,7 @@ class SaveDataBackupDialog(qwidgets.QDialog):
 
         # Generate radio buttons
         for index, save_type in enumerate(d4m.save_data.SAVE_DATA_TYPES):
-            sd = save_type(self.d4m_config)
+            sd = save_type(self.context.config)
             radio_button = qwidgets.QRadioButton(sd.display_name())
             if sd.exists():
                 radio_button.setEnabled(True)
@@ -115,7 +113,7 @@ class SaveDataBackupDialog(qwidgets.QDialog):
         self.setWindowTitle("d4m - Backup Save Data")
 
 
-def save_data_restore(d4m_config: D4mConfig, d4m_logger: D4mLogger, parent=None):
+def save_data_restore(context: D4mGlobalContext, parent=None):
     f_dialog = qwidgets.QFileDialog()
     f_dialog.setAcceptMode(qwidgets.QFileDialog.AcceptOpen)
     f_dialog.setFileMode(qwidgets.QFileDialog.ExistingFile)
