@@ -19,6 +19,7 @@ depends=(
     'python-simple-term-menu'
     'python-vdf'
     'python-libarchive'
+    'python-setuptools-git-versioning-git'
 )
 makedepends=(
     'python-build'
