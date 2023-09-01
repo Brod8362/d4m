@@ -30,6 +30,7 @@ else:
 LOG_HISTORY = []
 
 FAVICONS = {
+    #"divamodarchive": d4m.api.download_favicon("divamodarchive"),
     "gamebanana": d4m.api.download_favicon("gamebanana")
 }
 
@@ -306,9 +307,12 @@ class ModInstallDialog(qwidgets.QDialog):
         self.progress_bar = qwidgets.QProgressBar()
 
         self.checkbox_layout = qwidgets.QHBoxLayout()
+        #self.checkbox_search_dma = qwidgets.QCheckBox("Search Diva Mod Archive")
+        #self.checkbox_search_dma.setChecked(True)
         self.checkbox_search_gb = qwidgets.QCheckBox("Search GameBanana")
 
         self.checkbox_search_gb.setChecked(True)
+        #self.checkbox_layout.addWidget(self.checkbox_search_dma)
         self.checkbox_layout.addWidget(self.checkbox_search_gb)
 
         self.search_button = qwidgets.QPushButton("Search")
@@ -356,6 +360,15 @@ class ModInstallDialog(qwidgets.QDialog):
                     results.extend(gb_results)
                     self.progress_bar.setValue(2)
                     d4m.api.multi_fetch_mod_data([(x["id"], x["category"]) for x in gb_results], origin="gamebanana")
+                """
+                if self.checkbox_search_dma.isChecked():
+                    self.progress_bar.setValue(3)
+                    dma_results = d4m.api.search_mods(self.mod_name_input.text(), origin="divamodarchive")
+                    results.extend(dma_results)
+                    self.progress_bar.setValue(4)
+                    d4m.api.multi_fetch_mod_data([(x["id"], x["category"]) for x in dma_results],
+                    origin="divamodarchive")
+                """
 
             except RuntimeError as e:
                 self.status_label.setText(f"Err: <strong color=red>{e}</strong>")
