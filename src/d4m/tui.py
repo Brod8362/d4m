@@ -44,8 +44,7 @@ def generate_preview(mod_str: str, mod_manager: ModManager):
 def menu_install(mod_manager: ModManager):
     search_str = input("Search for a mod...:")
     gb_mods = api.search_mods(search_str, origin="gamebanana")
-    dma_mods = api.search_mods(search_str, origin="divamodarchive")
-    found_mods = gb_mods + dma_mods
+    found_mods = gb_mods
     installed_ids = [mod.id for mod in mod_manager.mods if not mod.is_simple()]
     if not found_mods:
         print(f"No mods matching {colorama.Style.BRIGHT}{search_str}{colorama.Style.RESET_ALL} found.")

@@ -13,7 +13,7 @@ Features
 - Automatically determine game install directory
 - Install and update DivaModLoader
 - Easily enable/disable mods
-- Search and Install mods from [GameBanana](https://gamebanana.com/games/16522) and [DivaModArchive](https://divamodarchive.xyz/)
+- Search and Install mods from [GameBanana](https://gamebanana.com/games/16522)
 - Install mods from a local archive (.7z,.rar,.zip, etc)
 - Update installed mods easily
 - Migrate metadata from DivaModManager

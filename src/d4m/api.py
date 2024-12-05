@@ -1,12 +1,10 @@
 import functools
 
 import d4m.gamebanana as gamebanana
-import d4m.dma as dma
 import d4m.manage
 import requests
 
 SUPPORTED_APIS = {
-    "divamodarchive": dma,
     "gamebanana": gamebanana
 }
 
