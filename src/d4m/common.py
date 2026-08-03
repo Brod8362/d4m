@@ -1,6 +1,6 @@
 import functools
+import importlib.metadata
 import packaging.version
-import pkg_resources
 import requests
 import vdf
 import os
@@ -9,7 +9,7 @@ from sys import exit, platform
 
 MEGAMIX_APPID = 1761390
 
-VERSION = pkg_resources.get_distribution("d4m").version
+VERSION = importlib.metadata.version("d4m")
 
 
 def get_vdf_path():

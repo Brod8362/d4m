@@ -1,7 +1,7 @@
 import requests
 
 DMA_BASE_DOMAIN = "https://divamodarchive.com/api/v1"
-DMA_SEARCH = "/posts/latest"
+DMA_SEARCH = "/posts"
 DMA_GET_BY_ID = "/posts/"
 DMA_GET_BY_ID_BULK = "/posts/posts"
 
@@ -29,11 +29,11 @@ def multi_fetch_mod_data(mod_info: "list[tuple[int, str]]") -> "list[dict]":
         for post in j:
             obj = {
                 "id": post["id"],
-                "hash": post["date"],
-                "image": post["image"],
-                "download": post["link"],
-                "download_count": post["downloads"],
-                "like_count": post["likes"]
+                "hash": post["time"],
+                "image": post["images"][0] if post["images"] else None,
+                "download": post["files"][0] if post["files"] else None,
+                "download_count": post["download_count"],
+                "like_count": post["like_count"]
             }
             mod_info_cache[post["id"]] = obj
             mod_data.append(obj)
@@ -56,11 +56,11 @@ def fetch_mod_data(mod_id: int, _category: str) -> "dict":
 
     obj = {
         "id": mod_id,
-        "hash": j["date"],
-        "image": j["image"],
-        "download": j["link"],
-        "download_count": j["downloads"],
-        "like_count": j["likes"]
+        "hash": j["time"],
+        "image": j["images"][0] if j["images"] else None,
+        "download": j["files"][0] if j["files"] else None,
+        "download_count": j["download_count"],
+        "like_count": j["like_count"]
     }
     mod_info_cache[mod_id] = obj
     return obj
@@ -70,7 +70,7 @@ def search_mods(query: str):
     resp = requests.get(
         DMA_BASE_DOMAIN + DMA_SEARCH,
         params={
-            "name": query,
+            "query": query,
             "game_tag": 0
         }
     )
@@ -85,8 +85,8 @@ def search_mods(query: str):
         obj = {
             "name": e["name"],
             "id": e["id"],
-            "author": e["user"]["name"],
-            "category": e["type_tag"],
+            "author": e["authors"][0]["display_name"] if e["authors"] else "Unknown",
+            "category": e["post_type"],
             "origin": "divamodarchive"
         }
         return obj
